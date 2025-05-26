@@ -6,109 +6,116 @@ namespace Zilean.Database.Services.Lucene;
 
 public class ImdbLuceneMatchingService(ILogger<ImdbLuceneMatchingService> logger, ZileanConfiguration configuration) : IImdbMatchingService
 {
-    private ConcurrentDictionary<string, string?>? _imdbCache;
+    private readonly ObjectPool<ConcurrentDictionary<string, string?>> _imdbCache = new DefaultObjectPoolProvider().Create<ConcurrentDictionary<string, string?>>();
     private LuceneSession? _imdbFilesIndex;
-    private DirectoryReader? _reader;
-    private IndexSearcher? _searcher;
 
-    public async Task PopulateImdbData()
-    {
-        _imdbFilesIndex = await IndexImdbDocumentsInMemory();
-        _imdbCache = new();
-    }
+    public async Task PopulateImdbData() => _imdbFilesIndex = await IndexImdbDocumentsInMemory();
 
     public void DisposeImdbData()
     {
-        _reader?.Dispose();
         _imdbFilesIndex?.Writer.Dispose();
         _imdbFilesIndex?.Directory.Dispose();
         _imdbFilesIndex?.Dispose();
-        _imdbCache.Clear();
-        _imdbCache = null;
     }
 
-    public Task<ConcurrentQueue<TorrentInfo>> MatchImdbIdsForBatchAsync(IEnumerable<TorrentInfo> batch)
+    public async Task<ConcurrentQueue<TorrentInfo>?> MatchImdbIdsForBatchAsync(IEnumerable<TorrentInfo> batch, bool returnQueue = true)
     {
         if (_imdbFilesIndex is null)
         {
             throw new InvalidOperationException("IMDb data has not been loaded yet.");
         }
 
-        var parallelOptions = new ParallelOptions
+        var imdbCache = _imdbCache.Get();
+
+        try
         {
-            MaxDegreeOfParallelism = configuration.Imdb.UseAllCores switch
+            var parallelOptions = new ParallelOptions
             {
-                true => Environment.ProcessorCount,
-                false => configuration.Imdb.NumberOfCores,
-            },
-        };
+                MaxDegreeOfParallelism = configuration.Imdb.UseAllCores switch
+                {
+                    true => Environment.ProcessorCount,
+                    false => configuration.Imdb.NumberOfCores,
+                },
+            };
 
-        var updatedTorrents = new ConcurrentQueue<TorrentInfo>();
+            var updatedTorrents = new ConcurrentQueue<TorrentInfo>();
 
-        var groupedByYearAndCategory = batch.GroupBy(
-            t => new
+            var groupedByYearAndCategory = batch.GroupBy(t => new
             {
                 t.Year,
                 t.Category,
             });
 
-        _reader = _imdbFilesIndex.Writer.GetReader(applyAllDeletes: true);
-        _searcher = new(_reader);
+            using var reader = _imdbFilesIndex.Writer.GetReader(applyAllDeletes: true);
+            var searcher = new IndexSearcher(reader);
 
-        Parallel.ForEach(
-            groupedByYearAndCategory, parallelOptions, (torrentGroup, _) =>
-            {
-                foreach (var torrent in torrentGroup)
+
+            await Parallel.ForEachAsync(
+                groupedByYearAndCategory, parallelOptions, async (torrentGroup, _) =>
                 {
-                    if (_imdbCache.TryGetValue(torrent.CacheKey(), out var imdbId))
+                    foreach (var torrent in torrentGroup)
                     {
-                        torrent.ImdbId = imdbId;
-                        continue;
+                        if (imdbCache.TryGetValue(torrent.CacheKey(), out var imdbId))
+                        {
+                            torrent.ImdbId = imdbId;
+                            continue;
+                        }
+
+                        var bestMatch = GetBestMatch(torrent, searcher); // remains sync unless changed
+
+                        if (bestMatch == null)
+                        {
+                            logger.NoSuitableMatchFound(torrent.NormalizedTitle, torrent.Category);
+                            continue;
+                        }
+
+                        if (bestMatch.ImdbId != torrent.ImdbId)
+                        {
+                            logger.TorrentUpdated(
+                                torrent.NormalizedTitle,
+                                torrent.ImdbId,
+                                bestMatch.ImdbId,
+                                bestMatch.Score,
+                                torrent.Category,
+                                bestMatch.Title,
+                                bestMatch.Year);
+
+                            torrent.ImdbId = bestMatch.ImdbId;
+                            imdbCache[torrent.CacheKey()] = bestMatch.ImdbId;
+
+                            if (returnQueue)
+                            {
+                                updatedTorrents.Enqueue(torrent);
+                            }
+                        }
+                        else
+                        {
+                            logger.TorrentRetained(
+                                torrent.NormalizedTitle,
+                                torrent.ImdbId,
+                                bestMatch.Score,
+                                torrent.Category,
+                                bestMatch.Title,
+                                bestMatch.Year);
+                        }
                     }
 
-                    var bestMatch = GetBestMatch(torrent);
+                    await ValueTask.CompletedTask; // required if there's no real async logic
+                });
 
-                    if (bestMatch == null)
-                    {
-                        logger.NoSuitableMatchFound(torrent.NormalizedTitle, torrent.Category);
-                        continue;
-                    }
 
-                    if (bestMatch.ImdbId != torrent.ImdbId)
-                    {
-                        logger.TorrentUpdated(
-                            torrent.NormalizedTitle,
-                            torrent.ImdbId,
-                            bestMatch.ImdbId,
-                            bestMatch.Score,
-                            torrent.Category,
-                            bestMatch.Title,
-                            bestMatch.Year);
-
-                        torrent.ImdbId = bestMatch.ImdbId;
-
-                        _imdbCache[torrent.CacheKey()] = bestMatch.ImdbId;
-
-                        updatedTorrents.Enqueue(torrent);
-                        continue;
-                    }
-
-                    logger.TorrentRetained(
-                        torrent.NormalizedTitle,
-                        torrent.ImdbId,
-                        bestMatch.Score,
-                        torrent.Category,
-                        bestMatch.Title,
-                        bestMatch.Year);
-                }
-            });
-
-        return Task.FromResult(updatedTorrents);
+            return returnQueue ? updatedTorrents : null;
+        }
+        finally
+        {
+            imdbCache.Clear();
+            _imdbCache.Return(imdbCache);
+        }
     }
 
-    private BestMatch? GetBestMatch(TorrentInfo torrent, int maxResults = 10)
+    private BestMatch? GetBestMatch(TorrentInfo torrent, IndexSearcher searcher, int maxResults = 10)
     {
-        var matches = MatchTitle(torrent, maxResults);
+        var matches = MatchTitle(torrent, searcher, maxResults);
 
         if (!matches.Any())
         {
@@ -132,7 +139,7 @@ public class ImdbLuceneMatchingService(ILogger<ImdbLuceneMatchingService> logger
         return bestMatch;
     }
 
-    private List<BestMatch> MatchTitle(TorrentInfo torrent, int maxResults = 3)
+    private List<BestMatch> MatchTitle(TorrentInfo torrent, IndexSearcher searcher, int maxResults = 3)
     {
         if (string.IsNullOrWhiteSpace(torrent.NormalizedTitle))
         {
@@ -148,7 +155,7 @@ public class ImdbLuceneMatchingService(ILogger<ImdbLuceneMatchingService> logger
             AddYearToQuery(torrent, combinedQuery);
         }
 
-        var topDocs = _searcher.Search(combinedQuery, maxResults);
+        var topDocs = searcher.Search(combinedQuery, maxResults);
 
         if (topDocs.ScoreDocs.Length == 0)
         {
@@ -159,7 +166,7 @@ public class ImdbLuceneMatchingService(ILogger<ImdbLuceneMatchingService> logger
 
         foreach (var scoreDoc in topDocs.ScoreDocs)
         {
-            var doc = _searcher.Doc(scoreDoc.Doc);
+            var doc = searcher.Doc(scoreDoc.Doc);
 
             var imdbId = doc.Get(LuceneIndexEntry.ImdbId);
             var title = doc.Get(LuceneIndexEntry.Title);

@@ -41,6 +41,7 @@ Thumbs.db
 # Ignore IDE-specific files
 **/.vscode
 **/.idea
+**/.qodo
 *.sln.ide
 
 # Ignore other common unnecessary files
@@ -76,9 +77,28 @@ logs/
 .dockerignore
 Dockerfile
 
+# Ignore Local Rust Assets
+src/ParsettOverToRust/target/**
+src/RustServer/target/**
+src/RustServer/data/**
+
+# Ignore Python and Go
+src/PythonPttServer/**
+src/GoPttServer/**
+
 # Ignore github, k6 and scripts
 **/.github
 **/k6
 **/scripts
 **/.run
 **/eng
+
+# Ignore repo files
+**/Taskfile.yml
+release-please-config.json
+renovate.json
+README.md
+.release-please-manifest.json
+.github
+CHANGELOG.md
+Zilean.sln.DotSettings.user

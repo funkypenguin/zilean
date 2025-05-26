@@ -1,223 +1,199 @@
-namespace Zilean.Scraper.Features.LzString;
+using System.Runtime.InteropServices;
 
-public class Decompressor
+public static class Decompressor
 {
-    private const string KeyStrUriSafe = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$";
-    private static readonly IDictionary<char, char> _keyStrUriSafeDict = CreateBaseDict(KeyStrUriSafe);
+    private static readonly byte[] _uriKey =
+        Encoding.ASCII.GetBytes("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$");
 
-    private static IDictionary<char, char> CreateBaseDict(string alphabet)
+    public static bool TryDecompress(ReadOnlySpan<char> input, out string? result)
     {
-        var dict = new Dictionary<char, char>();
-        for (var i = 0; i < alphabet.Length; i++)
+        result = null;
+
+        ushort[] buffer = new ushort[input.Length];
+        int length = 0;
+
+        foreach (var ch in input)
         {
-            dict[alphabet[i]] = (char)i;
-        }
-        return dict;
-    }
+            var c = ch == ' ' ? '+' : ch;
+            int index = Array.IndexOf(_uriKey, (byte)c);
+            if (index < 0)
+                return false;
 
-    public static string FromEncodedUriComponent(string input)
-    {
-        ArgumentNullException.ThrowIfNull(input);
-
-        input = input.Replace(" ", "+");
-        return Decompress(input.Length, 32, index => _keyStrUriSafeDict[input[index]]);
-    }
-
-    private static string Decompress(int length, int resetValue, Func<int, char> getNextValue)
-    {
-        var dictionary = new List<Memory<char>>();
-        var enlargeIn = 4;
-        var numBits = 3;
-        var result = StringBuilderCache.Acquire();
-        int i;
-        Memory<char> w;
-        int bits = 0, resb, maxpower, power;
-        var c = '\0';
-
-        var data_val = getNextValue(0);
-        var data_position = resetValue;
-        var data_index = 1;
-
-        for (i = 0; i < 3; i += 1)
-        {
-            var rentedArray = ArrayPool<char>.Shared.Rent(1);
-            rentedArray[0] = (char)i;
-            dictionary.Add(rentedArray.AsMemory(0, 1));
+            buffer[length++] = (ushort)index;
         }
 
-        maxpower = (int)Math.Pow(2, 2);
+        var compressed = new ReadOnlySpan<ushort>(buffer, 0, length);
+        var decoded = DecompressInternal(compressed, 6);
+        if (decoded == null)
+            return false;
+
+        result = Encoding.Unicode.GetString(MemoryMarshal.AsBytes(decoded.AsSpan()));
+        return true;
+    }
+
+    private static ushort[]? DecompressInternal(ReadOnlySpan<ushort> input, byte bitsPerChar)
+{
+    if (input.IsEmpty)
+        return Array.Empty<ushort>();
+
+    int index = 1;
+    ushort position = (ushort)(1 << (bitsPerChar - 1));
+    ushort resetVal = position;
+    ushort val = input[0];
+
+    List<ushort[]> dictionary = new(16)
+    {
+        new ushort[] { 0 },
+        new ushort[] { 1 },
+        new ushort[] { 2 }
+    };
+
+    int numBits = 3;
+    int enlargeIn = 4;
+
+    // Read first code (2 bits)
+    int cc = 0;
+    int power = 1;
+    for (int i = 0; i < 2; i++)
+    {
+        bool bit = (val & position) != 0;
+        position >>= 1;
+
+        if (position == 0 && index < input.Length)
+        {
+            position = resetVal;
+            val = input[index++];
+        }
+
+        if (bit)
+            cc |= power;
+
+        power <<= 1;
+    }
+
+    if (cc == 2)
+        return Array.Empty<ushort>();
+
+    ushort firstChar;
+    {
+        int bitsToRead = cc == 0 ? 8 : 16;
+        int raw = 0;
         power = 1;
-        while (power != maxpower)
+        for (int i = 0; i < bitsToRead; i++)
         {
-            resb = data_val & data_position;
-            data_position >>= 1;
-            if (data_position == 0)
+            bool bit = (val & position) != 0;
+            position >>= 1;
+
+            if (position == 0 && index < input.Length)
             {
-                data_position = resetValue;
-                data_val = getNextValue(data_index++);
+                position = resetVal;
+                val = input[index++];
             }
-            bits |= (resb > 0 ? 1 : 0) * power;
+
+            if (bit)
+                raw |= power;
+
             power <<= 1;
         }
 
-        switch (bits)
+        firstChar = (ushort)raw;
+    }
+
+    List<ushort> w = new() { firstChar };
+    List<ushort> result = new() { firstChar };
+    dictionary.Add(new[] { firstChar });
+
+    while (index <= input.Length)
+    {
+        int code = 0;
+        power = 1;
+
+        for (int i = 0; i < numBits; i++)
         {
-            case 0:
-                bits = 0;
-                maxpower = (int)Math.Pow(2, 8);
-                power = 1;
-                while (power != maxpower)
-                {
-                    resb = data_val & data_position;
-                    data_position >>= 1;
-                    if (data_position == 0)
-                    {
-                        data_position = resetValue;
-                        data_val = getNextValue(data_index++);
-                    }
-                    bits |= (resb > 0 ? 1 : 0) * power;
-                    power <<= 1;
-                }
-                c = (char)bits;
-                break;
-            case 1:
-                bits = 0;
-                maxpower = (int)Math.Pow(2, 16);
-                power = 1;
-                while (power != maxpower)
-                {
-                    resb = data_val & data_position;
-                    data_position >>= 1;
-                    if (data_position == 0)
-                    {
-                        data_position = resetValue;
-                        data_val = getNextValue(data_index++);
-                    }
-                    bits |= (resb > 0 ? 1 : 0) * power;
-                    power <<= 1;
-                }
-                c = (char)bits;
-                break;
-            case 2:
-                return StringBuilderCache.GetStringAndRelease(result);
-        }
-        var rentedW = ArrayPool<char>.Shared.Rent(1);
-        rentedW[0] = c;
-        w = rentedW.AsMemory(0, 1);
-        dictionary.Add(w);
-        result.Append(c);
-        while (true)
-        {
-            if (data_index > length)
+            bool bit = (val & position) != 0;
+            position >>= 1;
+
+            if (position == 0 && index < input.Length)
             {
-                return StringBuilderCache.GetStringAndRelease(result);
+                position = resetVal;
+                val = input[index++];
             }
 
-            bits = 0;
-            maxpower = (int)Math.Pow(2, numBits);
+            if (bit)
+                code |= power;
+
+            power <<= 1;
+        }
+
+        if (code == 0 || code == 1)
+        {
+            int bitsToRead = code == 0 ? 8 : 16;
+            int raw = 0;
             power = 1;
-            while (power != maxpower)
+            for (int i = 0; i < bitsToRead; i++)
             {
-                resb = data_val & data_position;
-                data_position >>= 1;
-                if (data_position == 0)
+                bool bit = (val & position) != 0;
+                position >>= 1;
+
+                if (position == 0 && index < input.Length)
                 {
-                    data_position = resetValue;
-                    data_val = getNextValue(data_index++);
+                    position = resetVal;
+                    val = input[index++];
                 }
-                bits |= (resb > 0 ? 1 : 0) * power;
+
+                if (bit)
+                    raw |= power;
+
                 power <<= 1;
             }
 
-            int c2;
-            switch (c2 = bits)
-            {
-                case 0:
-                    bits = 0;
-                    maxpower = (int)Math.Pow(2, 8);
-                    power = 1;
-                    while (power != maxpower)
-                    {
-                        resb = data_val & data_position;
-                        data_position >>= 1;
-                        if (data_position == 0)
-                        {
-                            data_position = resetValue;
-                            data_val = getNextValue(data_index++);
-                        }
-                        bits |= (resb > 0 ? 1 : 0) * power;
-                        power <<= 1;
-                    }
-
-                    c2 = dictionary.Count;
-                    var rentedArray = ArrayPool<char>.Shared.Rent(1);
-                    rentedArray[0] = (char)bits;
-                    dictionary.Add(rentedArray.AsMemory(0, 1));
-                    enlargeIn--;
-                    break;
-                case 1:
-                    bits = 0;
-                    maxpower = (int)Math.Pow(2, 16);
-                    power = 1;
-                    while (power != maxpower)
-                    {
-                        resb = data_val & data_position;
-                        data_position >>= 1;
-                        if (data_position == 0)
-                        {
-                            data_position = resetValue;
-                            data_val = getNextValue(data_index++);
-                        }
-                        bits |= (resb > 0 ? 1 : 0) * power;
-                        power <<= 1;
-                    }
-                    c2 = dictionary.Count;
-                    var rentedArray16 = ArrayPool<char>.Shared.Rent(1);
-                    rentedArray16[0] = (char)bits;
-                    dictionary.Add(rentedArray16.AsMemory(0, 1));
-                    enlargeIn--;
-                    break;
-                case 2:
-                    return StringBuilderCache.GetStringAndRelease(result);
-            }
-
-            if (enlargeIn == 0)
-            {
-                enlargeIn = (int)Math.Pow(2, numBits);
-                numBits++;
-            }
-
-            Memory<char> entry;
-            if (dictionary.Count - 1 >= c2)
-            {
-                entry = dictionary[c2];
-            }
-            else
-            {
-                if (c2 == dictionary.Count)
-                {
-                    entry = w.Span.ToArray().AsMemory();
-                }
-                else
-                {
-                    return null;
-                }
-            }
-            result.Append(entry.Span);
-
-            // Add w+entry[0] to the dictionary.
-            var newEntry = ArrayPool<char>.Shared.Rent(w.Length + 1);
-            w.Span.CopyTo(newEntry);
-            newEntry[w.Length] = entry.Span[0];
-            dictionary.Add(newEntry.AsMemory(0, w.Length + 1));
+            ushort c = (ushort)raw;
+            dictionary.Add(new[] { c });
+            code = dictionary.Count - 1;
             enlargeIn--;
+        }
+        else if (code == 2)
+        {
+            break;
+        }
 
-            w = entry;
-            if (enlargeIn == 0)
-            {
-                enlargeIn = (int)Math.Pow(2, numBits);
-                numBits++;
-            }
+        if (enlargeIn == 0)
+        {
+            enlargeIn = 1 << numBits;
+            numBits++;
+        }
+
+        ushort[] entry;
+        if (code < dictionary.Count)
+        {
+            entry = dictionary[code];
+        }
+        else if (code == dictionary.Count)
+        {
+            entry = w.Concat(new[] { w[0] }).ToArray(); // safe fallback
+        }
+        else
+        {
+            return null;
+        }
+
+        result.AddRange(entry);
+
+        var newEntry = new ushort[w.Count + 1];
+        w.CopyTo(newEntry, 0);
+        newEntry[w.Count] = entry[0];
+        dictionary.Add(newEntry);
+
+        w = new(entry);
+
+        enlargeIn--;
+        if (enlargeIn == 0)
+        {
+            enlargeIn = 1 << numBits;
+            numBits++;
         }
     }
+
+    return result.ToArray();
+}
 }

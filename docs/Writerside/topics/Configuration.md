@@ -59,6 +59,14 @@ _Default: `200`_
 _The minimum score match for DMM search results. Closer to 1 means a more exact match has to occur. A value between 1 and 0._
 _Default: `0.85`_
 
+**Dmm.GitHubPat**
+_A personal access token to use when cloning the repository._
+_Default: `null`_
+
+**Dmm.GitHubRepoUrl**
+_The DMM hashlists repo to download, in case you are using a mirror._
+_Default: `https://github.com/debridmediamanager/hashlists/zipball/main/`_
+
 ### Torznab Configuration
 **Torznab.EnableEndpoint**
 _Indicates whether the Torznab indexer should expose an API endpoint._
@@ -67,8 +75,7 @@ _Default: `true`_
 ### Database Configuration
 **Database.ConnectionString**
 _The connection string for the PostgreSQL database._
-_$POSTGRES_PASSWORD should be replaced with the password in your .env_
-_Default: `Host=localhost;Database=zilean;Username=postgres;Password=$POSTGRES_PASSWORD;Include Error Detail=true;Timeout=30;CommandTimeout=3600;`_
+_Default: `Host=localhost;Database=zilean;Username=postgres;Password=changeme;Include Error Detail=true;Timeout=30;CommandTimeout=3600;`_
 
 The database connection string comprises of the following:
 - `Host`: The host of the database, this will usually be the `containername` if you are using docker compose of the postgres instance.
@@ -107,11 +114,12 @@ _Default: `true`_
 
 **Imdb.MinimumScoreMatch**
 _The minimum score match for IMDB search results. Closer to 1 means a more exact match has to occur. A value between 1 and 0._
+_**NOT USED FOR LUCENE MATCHING, ONLY FOR IMDB FUZZY MATCHING**_
 _Default: `0.85`_
 
 **Imdb.UseAllCores**
 _Should title matching use all available processor cores on the machine?_
-_Default: `false`_
+_Default: `true`_
 
 **Imdb.NumberOfCores**
 _The number of processor cores to use for parallel operations during matching_
@@ -119,7 +127,7 @@ _Default: `2`_
 
 **Imdb.UseLucene**
 _Indicates whether the IMDB Matcher should use Lucene for searching. This is massively faster, at the cost of extra ram. Approx 3GB needed while performing resyncs._
-_Default: `false`_
+_Default: `true`_
 
 ### Ingestion Configuration
 **Ingestion.ZurgInstances**
@@ -173,8 +181,31 @@ _Default: `10000`_
 
 ### Parsing Configuration
 **Parsing.BatchSize**
-_The batch size for parsing content._
-_Default: `5000`_
+_The number of items processed per parsing batch._
+_Default: `50000`_
+
+**Parsing.StorageBatchSize**
+_The bounded capacity multiplier for the storage queue. The storage queue can hold up to Parsing.BatchSize × StorageBatchSize items before blocking producers.
+Higher values allow more in-memory data to accumulate, which can increase memory usage._
+```
+Effective capacity: O(n × s) where
+    n = Parsing.BatchSize
+    s = Parsing.StorageBatchSize
+```
+_Default: `10`_
+
+**Parsing.ParsingType**
+_The underlying parsing provider method._
+_This can be `Python`, or `Go`. The Go implementation is an order of magnitude faster, however currently doesn't handle adult title filtering as well as Python, therefore python remains the default setting for now._
+_Default: `Python`_
+
+**Parsing.SocketPath**
+_The path to the socket for the parsing provider. Not much call to change this._
+_Default: `/tmp/zilean-torrent-parser.sock`_
+
+**Parsing.WorkerCount**
+_The number of worker threads to use for parsing content. This should be set to the number of cores on the machine._
+_Default: `4`_
 
 ## Enabling Ingestion
 

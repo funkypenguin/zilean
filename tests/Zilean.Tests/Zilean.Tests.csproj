@@ -29,4 +29,10 @@
       <ProjectReference Include="..\..\src\Zilean.Scraper\Zilean.Scraper.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="xunit.runner.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

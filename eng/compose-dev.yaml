@@ -1,17 +1,46 @@
+### Docker Compose file for development environment only, do not use in production without changing postgres username, password
+### and updating in the connection string!
+### Also - do not expose your ports in production on the postgres container.
+
 services:
-  postgresdev:
-    image: postgres:17.1
-    container_name: postgresdev
+  postgres:
+    image: postgres:17.2
+    container_name: postgres
     restart: unless-stopped
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zilean
     ports:
-      - "5432:5432"
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  zilean:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    container_name: zilean
+    tty: true
+    environment:
+      Zilean__Database__ConnectionString: "Host=postgres;Database=zilean;Username=postgres;Password=postgres;Include Error Detail=true;Timeout=30;CommandTimeout=3600;"
+      Zilean__Parsing__ParsingThreads: 8
+    restart: no
+    volumes:
+      - zilen_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    ports:
+      - 8181:8181
+
+volumes:
+  zilen_data:
+  postgres_data:

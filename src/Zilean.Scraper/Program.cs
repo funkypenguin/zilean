@@ -1,35 +1,18 @@
-﻿var builder = Host.CreateDefaultBuilder();
+﻿var builder = Host.CreateApplicationBuilder(args);
 
-builder.ConfigureAppConfiguration(configuration =>
-{
-    configuration.AddConfigurationFiles();
-});
+builder.Configuration.AddConfigurationFiles();
 
-builder.ConfigureLogging((context, logging) =>
-{
-    logging.ClearProviders();
-    var loggingConfiguration = context.Configuration.GetLoggerConfiguration();
-    Log.Logger = loggingConfiguration.CreateLogger();
-    logging.AddSerilog();
-});
+builder.AddOtlpServiceDefaults();
 
-builder.ConfigureServices((context, services) =>
-{
-    services.AddScrapers(context.Configuration);
-    services.AddCommandLine<DefaultCommand>(config =>
-    {
-        config.SetApplicationName("zilean-scraper");
+builder.Services.AddAnsiConsole();
 
-        config.AddCommand<DmmSyncCommand>("dmm-sync")
-            .WithDescription("Sync DMM Hashlists from Github.");
+builder.Services.AddScrapers(builder.Configuration);
+builder.Services.AddSingleton<DefaultCommand>();
+builder.Services.AddSingleton<DmmSyncCommand>();
+builder.Services.AddSingleton<GenericSyncCommand>();
+builder.Services.AddSingleton<ResyncImdbCommand>();
 
-        config.AddCommand<GenericSyncCommand>("generic-sync")
-            .WithDescription("Sync data from Zurg and Zilean instances.");
+var app = builder.Build();
+await app.StartAsync();
+return await app.ExecuteCommandLine(args);
 
-        config.AddCommand<ResyncImdbCommand>("resync-imdb")
-            .WithDescription("Force resync imdb data.");
-    });
-});
-
-var host = builder.Build();
-return await host.RunAsync(args);

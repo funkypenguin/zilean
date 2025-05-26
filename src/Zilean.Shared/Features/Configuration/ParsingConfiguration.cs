@@ -2,5 +2,9 @@
 
 public class ParsingConfiguration
 {
-    public int BatchSize { get; set; } = 5000;
+    public int IngestionBatchSize { get; set; } = 100;
+    public int ParsingBatchSize { get; set; } = 100;
+    public int ParsingThreads { get; set; } = 4;
+    public int MatchingBatchSize { get; set; } = 100;
+    public int StorageBatchSize { get; set; } = 1000;
 }

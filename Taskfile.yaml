@@ -1,0 +1,15 @@
+version: "3"
+
+vars:
+  GO_OUT_DIR: "src/GoPttServer"
+  PYTHON_OUT_DIR: ""
+  HOME_DIR: {sh: "echo $HOME"}
+
+includes:
+  go: .taskfiles/Go/Taskfile.yaml
+  python: .taskfiles/Python/Taskfile.yaml
+
+tasks:
+  default:
+    silent: true
+    cmds: ["task -l"]

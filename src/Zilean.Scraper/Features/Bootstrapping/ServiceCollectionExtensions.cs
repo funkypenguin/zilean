@@ -1,5 +1,3 @@
-using Zilean.Scraper.Features.Ingestion.Dmm;
-
 namespace Zilean.Scraper.Features.Bootstrapping;
 
 public static class ServiceCollectionExtensions
@@ -14,8 +12,26 @@ public static class ServiceCollectionExtensions
         services.AddDmmServices();
         services.AddGenericServices();
         services.AddZileanDataServices(zileanConfiguration);
-        services.AddSingleton<ParseTorrentNameService>();
+        services.AddGrpcSupport();
         services.AddHostedService<EnsureMigrated>();
+    }
+
+    public static IServiceCollection AddAnsiConsole(this IServiceCollection services)
+    {
+        Console.OutputEncoding = Encoding.UTF8;
+
+        var settings = new AnsiConsoleSettings
+        {
+            Ansi = AnsiSupport.Detect,
+            Interactive = InteractionSupport.Detect,
+            ColorSystem = ColorSystemSupport.Detect,
+        };
+
+        var ansiConsole = AnsiConsole.Create(settings);
+
+        services.AddSingleton(ansiConsole);
+
+        return services;
     }
 
     private static void AddDmmServices(this IServiceCollection services)
@@ -33,10 +49,7 @@ public static class ServiceCollectionExtensions
 
     private static void AddImdbServices(this IServiceCollection services)
     {
-        services.AddSingleton<ImdbMetadataLoader>();
         services.AddSingleton<ImdbConfiguration>();
-        services.AddSingleton<ImdbFileDownloader>();
-        services.AddSingleton<ImdbFileProcessor>();
         services.AddSingleton<ImdbFileService>();
     }
 }

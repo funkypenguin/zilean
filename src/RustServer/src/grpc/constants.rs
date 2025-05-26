@@ -1,0 +1,1 @@
+pub const ZILEAN_SOCKET_PATH: &str = "/tmp/zilean_rust.sock";

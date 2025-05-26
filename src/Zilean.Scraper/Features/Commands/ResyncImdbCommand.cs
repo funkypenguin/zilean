@@ -1,45 +1,92 @@
 ﻿namespace Zilean.Scraper.Features.Commands;
 
-public class ResyncImdbCommand(
-    ImdbMetadataLoader imdbLoader,
-    ITorrentInfoService torrentInfoService,
-    IImdbMatchingService imdbMatchingService,
-    ZileanDbContext dbContext,
-    IServiceProvider serviceProvider,
-    ILogger<ResyncImdbCommand> logger) : AsyncCommand<ResyncImdbCommand.ResyncImdbCommandSettings>
+public class ResyncImdbCommand : BaseCommand
 {
-    public sealed class ResyncImdbCommandSettings : CommandSettings
+    private readonly ITorrentInfoService _torrentInfoService;
+    private readonly IRustGrpcService _rustGrpcService;
+    private readonly ZileanDbContext _dbContext;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<ResyncImdbCommand> _logger;
+
+    public ResyncImdbCommand(
+        ITorrentInfoService torrentInfoService,
+        IRustGrpcService rustGrpcService,
+        ZileanDbContext dbContext,
+        IServiceProvider serviceProvider,
+        ILogger<ResyncImdbCommand> logger) : base("resync-imdb", "Resync IMDB data and optionally retag torrents")
     {
-        [CommandOption("-s|--skip-last-import")]
-        [Description("Skip the date check on imdb imports (last 14 days) and force it to import.")]
-        [DefaultValue(false)]
-        public bool SkipLastImport { get; set; }
+        _torrentInfoService = torrentInfoService;
+        _rustGrpcService = rustGrpcService;
+        _dbContext = dbContext;
+        _serviceProvider = serviceProvider;
+        _logger = logger;
 
-        [CommandOption("-t|--retag-missing-imdbs")]
-        [Description("Will attempt to match IMDB ids for anything that is missing them in the database.")]
-        [DefaultValue(false)]
-        public bool RetagMissingImdbs { get; set; }
-
-        [CommandOption("-a|--retag-all-imdbs")]
-        [Description("Will attempt to match IMDB ids for all torrents.")]
-        [DefaultValue(false)]
-        public bool RetagAllImdbs { get; set; }
+        AddForceDownload();
+        AddForceCreateIndex();
+        AddRetagMissingImdbsOption();
+        AddRetagAllImdbsOption();
     }
 
-    public override async Task<int> ExecuteAsync(CommandContext context, ResyncImdbCommandSettings settings)
+    private void AddRetagAllImdbsOption()
     {
+        var retagAllImdbsOption = new Option<bool>("-a", "--retag-all-imdbs")
+        {
+            Description = "Will attempt to match IMDB ids for all torrents.",
+            DefaultValueFactory = _ => false,
+        };
+        Options.Add(retagAllImdbsOption);
+    }
+
+    private void AddRetagMissingImdbsOption()
+    {
+        var retagMissingImdbsOption = new Option<bool>("-t", "--retag-missing-imdbs")
+        {
+            Description = "Will attempt to match IMDB ids for anything that is missing them in the database.",
+            DefaultValueFactory = _ => false,
+        };
+        Options.Add(retagMissingImdbsOption);
+    }
+
+    private void AddForceDownload()
+    {
+        var forceDownloadOption = new Option<bool>("-d", "--force-download")
+        {
+            Description = "Skip the date check on imdb imports (last 30 days) and force downloads a new file.",
+            DefaultValueFactory = _ => false,
+        };
+
+        Options.Add(forceDownloadOption);
+    }
+
+    private void AddForceCreateIndex()
+    {
+        var forceCreateIndex = new Option<bool>("-i", "--force-create-index")
+        {
+            Description = "Force the creation of the index file, even if it exists.",
+            DefaultValueFactory = _ => false,
+        };
+
+        Options.Add(forceCreateIndex);
+    }
+
+    protected override async Task<int> ExecuteAsync(ParseResult parseResult, CancellationToken cancellationToken)
+    {
+        var settings = ResyncImdbCommandSettings.Parse(parseResult);
+
         if (settings is {RetagAllImdbs: true, RetagMissingImdbs: true})
         {
-            logger.LogError("Cannot use both --retag-missing-imdbs and --retag-all-imdbs at the same time");
+            _logger.LogError("Cannot use both --retag-missing-imdbs and --retag-all-imdbs at the same time");
             return 1;
         }
 
-        var result = await imdbLoader.Execute(CancellationToken.None, skipLastImport: settings.SkipLastImport);
+        var result = 0;
 
-        if (result != 0)
-        {
-            return result;
-        }
+        await _rustGrpcService.IngestImdbData(
+            new()
+            {
+                ForceDownload = settings.ForceDownload,
+                ForceIndex = settings.ForceCreateIndex,
+            });
 
         try
         {
@@ -57,7 +104,7 @@ public class ResyncImdbCommand(
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Error occurred during ResyncImdbCommand");
+            _logger.LogError(e, "Error occurred during ResyncImdbCommand");
             result = 1;
         }
 
@@ -66,7 +113,7 @@ public class ResyncImdbCommand(
 
     private async Task HandleRetagging(bool all = false)
     {
-        var torrents = dbContext.Torrents.AsNoTracking()
+        var torrents = _dbContext.Torrents.AsNoTracking()
             .Where(x => x.Category != "xxx");
 
         if (!all)
@@ -76,34 +123,50 @@ public class ResyncImdbCommand(
 
         var processableTorrents = await torrents.ToListAsync();
 
-        logger.LogInformation("Found {TorrentCount} torrents", processableTorrents.Count);
+        _logger.LogInformation("Found {TorrentCount} torrents", processableTorrents.Count);
 
         if (processableTorrents.Count > 0)
         {
-            await imdbMatchingService.PopulateImdbData();
+            _logger.LogInformation("Starting to process torrents...");
 
-            logger.LogInformation("Starting to process torrents...");
+            await _rustGrpcService.StartServer();
 
-            var updatedTorrents = await imdbMatchingService.MatchImdbIdsForBatchAsync(processableTorrents);
+            var updatedTorrents = await _rustGrpcService.MatchImdbIdsForBatchAsync(processableTorrents);
 
-            imdbMatchingService.DisposeImdbData();
+            await _rustGrpcService.StopServer();
 
-            logger.LogInformation("Updating {TorrentCount} torrents", updatedTorrents.Count);
+            _logger.LogInformation("Updating {TorrentCount} torrents", updatedTorrents.Count);
 
-            await using var scope = serviceProvider.CreateAsyncScope();
+            await using var scope = _serviceProvider.CreateAsyncScope();
             var scopedDbContext = scope.ServiceProvider.GetRequiredService<ZileanDbContext>();
 
             scopedDbContext.AttachRange(updatedTorrents);
             scopedDbContext.UpdateRange(updatedTorrents);
             await scopedDbContext.SaveChangesAsync();
 
-            logger.LogInformation("Finished processing torrents");
+            _logger.LogInformation("Finished processing torrents");
         }
         else
         {
-            logger.LogInformation("No torrents found to match");
+            _logger.LogInformation("No torrents found to match");
         }
 
-        await torrentInfoService.VaccumTorrentsIndexes(CancellationToken.None);
+        await _torrentInfoService.VaccumTorrentsIndexes(CancellationToken.None);
+    }
+
+    private class ResyncImdbCommandSettings
+    {
+        public bool ForceDownload { get; init; }
+        public bool ForceCreateIndex { get; init; }
+        public bool RetagMissingImdbs { get; init; }
+        public bool RetagAllImdbs { get; init; }
+
+        public static ResyncImdbCommandSettings Parse(ParseResult parseResult) => new()
+        {
+            ForceDownload = parseResult.GetValue<bool>("-d"),
+            ForceCreateIndex = parseResult.GetValue<bool>("-i"),
+            RetagMissingImdbs = parseResult.GetValue<bool>("-t"),
+            RetagAllImdbs = parseResult.GetValue<bool>("-a"),
+        };
     }
 }

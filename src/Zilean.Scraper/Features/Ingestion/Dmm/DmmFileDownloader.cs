@@ -22,63 +22,69 @@ public class DmmFileDownloader(ILogger<DmmFileDownloader> logger, ZileanConfigur
         {
             if (DateTime.UtcNow - dmmLastImport.OccuredAt < TimeSpan.FromMinutes(configuration.Dmm.MinimumReDownloadIntervalMinutes))
             {
-                logger.LogInformation("DMM Hashlists download not required as last download was less than the configured {Minutes} minutes re-download interval set in DMM Configuration.", configuration.Dmm.MinimumReDownloadIntervalMinutes);
+                logger.LogInformation(
+                    "DMM Hashlists download not required as last download was less than the configured {Minutes} minutes re-download interval set in DMM Configuration",
+                    configuration.Dmm.MinimumReDownloadIntervalMinutes);
                 return tempDirectory;
             }
         }
 
-        var client = CreateHttpClient();
-        var response = await client.GetAsync(Filename, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
         EnsureDirectoryIsClean(tempDirectory);
 
-        response.EnsureSuccessStatusCode();
+        var tempZipPath = Path.Combine(tempDirectory, "DMMHashlists.zip");
 
-        var tempFilePath = Path.Combine(tempDirectory, "DMMHashlists.zip");
-        await using (var stream = await response.Content.ReadAsStreamAsync(cancellationToken))
-        await using (var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+        using var handler = new HttpClientHandler();
+        handler.AutomaticDecompression = DecompressionMethods.None;
+
+        using var client = new HttpClient(handler);
+        client.BaseAddress = new(configuration.Dmm.GitHubRepoUrl);
+        client.Timeout = TimeSpan.FromMinutes(10);
+
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("curl/7.54");
+
+        if (!string.IsNullOrEmpty(configuration.Dmm.GitHubPat))
         {
-            await stream.CopyToAsync(fileStream, cancellationToken);
+            client.DefaultRequestHeaders.Authorization = new("Bearer", configuration.Dmm.GitHubPat);
         }
 
-        ExtractZipFile(tempFilePath, tempDirectory);
-
-        File.Delete(tempFilePath);
-
-        foreach (var file in _filesToIgnore)
+        await using (var httpStream = await client.GetStreamAsync(Filename, cancellationToken))
+        await using (var fileStream = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
         {
-            CleanRepoExtras(tempDirectory, file);
+            await httpStream.CopyToAsync(fileStream, cancellationToken);
         }
 
-        logger.LogInformation("Downloaded and extracted Repository to {TempDirectory}", tempDirectory);
-
-        return tempDirectory;
-    }
-
-    private static void ExtractZipFile(string zipFilePath, string extractPath)
-    {
-        using var fileStream = new FileStream(zipFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        using var archive = new ZipArchive(fileStream, ZipArchiveMode.Read);
+        using var archive = ZipFile.OpenRead(tempZipPath);
 
         foreach (var entry in archive.Entries)
         {
-            var entryPath = Path.Combine(extractPath, Path.GetFileName(entry.FullName));
-            if (!entry.FullName.EndsWith('/'))
+            if (_filesToIgnore.Contains(entry.Name))
             {
-                entry.ExtractToFile(entryPath, true);
+                continue;
             }
+
+            var entryPath = Path.Combine(tempDirectory, Path.GetFileName(entry.FullName));
+            Directory.CreateDirectory(Path.GetDirectoryName(entryPath)!);
+
+            // skip directories
+            if (string.IsNullOrWhiteSpace(entry.Name))
+            {
+                continue;
+            }
+
+            await using var entryStream = entry.Open();
+            await using var outFile = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true);
+            await entryStream.CopyToAsync(outFile, cancellationToken);
         }
-    }
 
-    private static void CleanRepoExtras(string tempDirectory, string fileName)
-    {
-        var repoIndex = Path.Combine(tempDirectory, fileName);
-
-        if (File.Exists(repoIndex))
+        if (File.Exists(tempZipPath))
         {
-            File.Delete(repoIndex);
+            File.Delete(tempZipPath);
         }
+
+        logger.LogInformation("Downloaded and extracted Repository to {TempDirectory}", tempDirectory);
+        return tempDirectory;
     }
+
 
     private static void EnsureDirectoryIsClean(string tempDirectory)
     {
@@ -88,18 +94,5 @@ public class DmmFileDownloader(ILogger<DmmFileDownloader> logger, ZileanConfigur
         }
 
         Directory.CreateDirectory(tempDirectory);
-    }
-
-    private static HttpClient CreateHttpClient()
-    {
-        var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://github.com/debridmediamanager/hashlists/zipball/main/"),
-            Timeout = TimeSpan.FromMinutes(10),
-        };
-
-        httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("curl/7.54");
-        return httpClient;
     }
 }

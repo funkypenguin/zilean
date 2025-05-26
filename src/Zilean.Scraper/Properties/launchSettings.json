@@ -1,10 +1,18 @@
 ﻿{
   "$schema": "http://json.schemastore.org/launchsettings.json",
   "profiles": {
+    "Zilean.Scraper: Default Command": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "Zilean__Database__ConnectionString": "Host=localhost;Database=zilean;Username=postgres;Password=postgres;Include Error Detail=true;Timeout=30;CommandTimeout=3600;",
+        "Zilean__Parsing__IncludeTrash": "false",
+        "Zilean__Parsing__IncludeAdult": "false",
+        "Zilean__Parsing__BatchSize": "5000"
+      }
+    },
     "Zilean.Scraper: DMM Sync": {
       "commandName": "Project",
       "environmentVariables": {
-        "ZILEAN_PYTHON_VENV": "C:\\Python311",
         "Zilean__Database__ConnectionString": "Host=localhost;Database=zilean;Username=postgres;Password=postgres;Include Error Detail=true;Timeout=30;CommandTimeout=3600;",
         "Zilean__Parsing__IncludeTrash": "false",
         "Zilean__Parsing__IncludeAdult": "false",
@@ -12,10 +20,19 @@
       },
       "commandLineArgs": "dmm-sync"
     },
+    "Zilean.Scraper: Test Rust": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "Zilean__Database__ConnectionString": "Host=localhost;Database=zilean;Username=postgres;Password=postgres;Include Error Detail=true;Timeout=30;CommandTimeout=3600;",
+        "Zilean__Parsing__IncludeTrash": "false",
+        "Zilean__Parsing__IncludeAdult": "false",
+        "Zilean__Parsing__BatchSize": "5000"
+      },
+      "commandLineArgs": "test-rust"
+    },
     "Zilean.Scraper: Generic Sync": {
       "commandName": "Project",
       "environmentVariables": {
-        "ZILEAN_PYTHON_VENV": "C:\\Python311",
         "Zilean__Database__ConnectionString": "Host=localhost;Database=zilean;Username=postgres;Password=postgres;Include Error Detail=true;Timeout=300;CommandTimeout=3600;"
       },
       "commandLineArgs": "generic-sync"
@@ -23,13 +40,12 @@
     "Zilean.Scraper: Resync Imdb Files": {
       "commandName": "Project",
       "environmentVariables": {
-        "ZILEAN_PYTHON_VENV": "C:\\Python311",
-        "Zilean__Database__ConnectionString": "Host=media-host;port=17000;Database=zilean;Username=postgres;Password=V8fVsqcFjiknykULWCA7egxMZAznkE;Include Error Detail=true;Timeout=30;CommandTimeout=36000;",
+        "Zilean__Database__ConnectionString": "Host=localhost;Database=zilean;Username=postgres;Password=postgres;Include Error Detail=true;Timeout=300;CommandTimeout=3600;",
         "Zilean__Imdb__UseAllCores": "true",
         "Zilean__Imdb__MinimumScoreMatch": "0.85",
         "Zilean__Imdb__UseLucene": "true"
       },
-      "commandLineArgs": "resync-imdb -t"
+      "commandLineArgs": "resync-imdb -t -i"
     }
   }
 }

@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-
-namespace Zilean.Shared.Features.Configuration;
+﻿namespace Zilean.Shared.Features.Configuration;
 
 public static class LoggingConfiguration
 {
@@ -17,6 +15,8 @@ public static class LoggingConfiguration
                 "System.Net.Http.HttpClient.Scraper.ClientHandler": "Warning",
                 "Microsoft.AspNetCore.Hosting.Diagnostics": "Error",
                 "Microsoft.AspNetCore.DataProtection": "Error",
+                "Zilean.Database.Services.Lucene.ImdbLuceneMatchingService": "Information",
+                "Zilean.Database.Services.FuzzyString.ImdbFuzzyStringMatchingService": "Information",
               }
             }
           }
@@ -25,16 +25,22 @@ public static class LoggingConfiguration
 
     public static IConfigurationBuilder AddLoggingConfiguration(this IConfigurationBuilder configuration, string configurationFolderPath)
     {
-        EnsureExists(configurationFolderPath);
+        var loggingPath = Path.Combine(configurationFolderPath, ConfigurationLiterals.LoggingConfigFilename);
 
-        configuration.AddJsonFile(ConfigurationLiterals.LoggingConfigFilename, false, false);
+        EnsureExists(loggingPath);
+
+        configuration.AddJsonFile(loggingPath, false, false);
 
         return configuration;
     }
 
-    private static void EnsureExists(string configurationFolderPath)
+    private static void EnsureExists(string loggingPath)
     {
-        var loggingPath = Path.Combine(configurationFolderPath, ConfigurationLiterals.LoggingConfigFilename);
+        if (File.Exists(loggingPath))
+        {
+            return;
+        }
+
         File.WriteAllText(loggingPath, DefaultLoggingContents);
     }
 }

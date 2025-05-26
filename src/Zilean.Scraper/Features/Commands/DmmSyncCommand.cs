@@ -1,9 +1,7 @@
-﻿using Zilean.Scraper.Features.Ingestion.Dmm;
+﻿namespace Zilean.Scraper.Features.Commands;
 
-namespace Zilean.Scraper.Features.Commands;
-
-public class DmmSyncCommand(DmmScraping dmmScraping) : AsyncCommand
+public sealed class DmmSyncCommand(DmmScraping dmmScraping) : BaseCommand("dmm-sync", "Synchronize DMM torrents with the database")
 {
-    public override Task<int> ExecuteAsync(CommandContext context) =>
+    protected override Task<int> ExecuteAsync(ParseResult parseResult, CancellationToken cancellationToken) =>
         dmmScraping.Execute(CancellationToken.None);
 }

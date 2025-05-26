@@ -8,4 +8,6 @@ public class DmmConfiguration
     public int MinimumReDownloadIntervalMinutes { get; set; } = 30;
     public int MaxFilteredResults { get; set; } = 200;
     public double MinimumScoreMatch { get; set; } = 0.85;
+    public string? GitHubPat { get; set; } = null;
+    public string GitHubRepoUrl { get; set; } = "https://github.com/debridmediamanager/hashlists/zipball/main/";
 }

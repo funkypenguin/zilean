@@ -1,14 +1,14 @@
 ﻿namespace Zilean.Scraper.Features.Commands;
 
-public sealed class DefaultCommand(ILogger<DefaultCommand> logger) : Command<DefaultCommand.Settings>
+public sealed class DefaultCommand : RootCommand
 {
-    public sealed class Settings : CommandSettings
+    public DefaultCommand(
+        DmmSyncCommand dmmSyncCommand,
+        GenericSyncCommand genericSyncCommand,
+        ResyncImdbCommand resyncImdbCommand)
     {
-    }
-
-    public override int Execute(CommandContext context, Settings settings)
-    {
-        logger.LogInformation("Zilean Scraper: Execution Completed");
-        return 0;
+        Subcommands.Add(dmmSyncCommand);
+        Subcommands.Add(genericSyncCommand);
+        Subcommands.Add(resyncImdbCommand);
     }
 }

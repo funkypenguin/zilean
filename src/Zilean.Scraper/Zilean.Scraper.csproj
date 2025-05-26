@@ -20,15 +20,10 @@
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" />
+    <PackageReference Include="DotMake.CommandLine" />
     <PackageReference Include="KubernetesClient" />
-    <PackageReference Include="Spectre.Console.Cli" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
-    <Content Remove="python\**" />
-    <None Include="python\**">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" />
+    <PackageReference Include="Spectre.Console" />
   </ItemGroup>
 
 </Project>

@@ -11,3 +11,13 @@ src/Zilean.Scraper/python/
 src/Zilean.ApiService/python/
 
 Zilean.sln.DotSettings.user
+
+src/GoPttServer/go-ptt-server
+
+src/RustImdbMatching/target/
+
+src/RustImdbMatching/tantivy_index/
+
+src/ParsettOverToRust/target/
+
+src/RustServer/target/

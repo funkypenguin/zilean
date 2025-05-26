@@ -1,4 +1,6 @@
-﻿public class ApiKeyDocumentTransformer : IOpenApiDocumentTransformer
+﻿namespace Zilean.ApiService.Features.Authentication;
+
+public class ApiKeyDocumentTransformer : IOpenApiDocumentTransformer
 {
     public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
     {

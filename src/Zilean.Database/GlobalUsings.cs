@@ -9,6 +9,7 @@ global using Microsoft.EntityFrameworkCore;
 global using Microsoft.EntityFrameworkCore.Metadata.Builders;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Logging;
+global using Microsoft.Extensions.ObjectPool;
 global using Npgsql;
 global using NpgsqlTypes;
 global using Spectre.Console;

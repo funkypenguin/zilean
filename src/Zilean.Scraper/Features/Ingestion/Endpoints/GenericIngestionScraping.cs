@@ -1,9 +1,11 @@
+using Zilean.Shared.Features.Imdb;
+
 namespace Zilean.Scraper.Features.Ingestion.Endpoints;
 
 public class GenericIngestionScraping(
     ZileanConfiguration configuration,
     ITorrentInfoService torrentInfoService,
-    ParseTorrentNameService parseTorrentNameService,
+    IRustGrpcService rustGrpcService,
     ILoggerFactory loggerFactory,
     IHttpClientFactory clientFactory,
     ILogger<GenericIngestionScraping> logger,
@@ -31,7 +33,7 @@ public class GenericIngestionScraping(
 
         var completedCount = 0;
 
-        var ingestionProcessor = new StreamedEntryProcessor(torrentInfoService, parseTorrentNameService, loggerFactory, clientFactory, configuration);
+        var ingestionProcessor = new StreamedEntryProcessor(torrentInfoService, rustGrpcService, loggerFactory, clientFactory, configuration);
 
         foreach (var endpoint in endpointsToProcess)
         {
@@ -52,6 +54,8 @@ public class GenericIngestionScraping(
         }
 
         await torrentInfoService.VaccumTorrentsIndexes(cancellationToken);
+
+        await rustGrpcService.StopServer();
 
         logger.LogInformation("Ingestion scraping completed for {Count} URLs", completedCount);
 

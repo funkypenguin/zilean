@@ -1,0 +1,21 @@
+[package]
+name = "parsett_rust"
+version = "1.0.0"
+edition = "2024"
+description = "Spoked's Parsett parser rewritten in Rust"
+
+[features]
+debug = []
+
+[dependencies]
+chrono = "0.4.41"
+lazy_static = "1.5.0"
+regex = "1.11.1"
+regress = "0.10.3"
+thiserror = "2.0.12"
+criterion = "0.6.0"
+rayon = "1.10.0"
+
+[[bench]]
+name = "parse"
+harness = false

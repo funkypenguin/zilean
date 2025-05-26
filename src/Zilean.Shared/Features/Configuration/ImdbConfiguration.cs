@@ -6,9 +6,9 @@ public class ImdbConfiguration
     public bool EnableEndpoint { get; set; } = true;
     public double MinimumScoreMatch { get; set; } = 0.85;
 
-    public bool UseAllCores { get; set; } = false;
+    public bool UseAllCores { get; set; } = true;
 
     public int NumberOfCores { get; set; } = 2;
 
-    public bool UseLucene { get; set; } = false;
+    public bool UseLucene { get; set; } = true;
 }

@@ -4,7 +4,7 @@ public static partial class ImdbLuceneMatchingServiceLogger
 {
     [LoggerMessage(
         EventId = 1,
-        Level = LogLevel.Warning,
+        Level = LogLevel.Debug,
         Message = "No suitable match found for Torrent '{Title}', Category: {Category}")]
     public static partial void NoSuitableMatchFound(this ILogger logger, string title, string category);
 
@@ -24,7 +24,7 @@ public static partial class ImdbLuceneMatchingServiceLogger
 
     [LoggerMessage(
         EventId = 3,
-        Level = LogLevel.Information,
+        Level = LogLevel.Debug,
         Message = "Torrent '{Title}' retained its existing IMDb ID '{ImdbId}' with a best match score of {Score}, Category: {Category}, Imdb Title: {ImdbTitle}, Imdb Year: {ImdbYear}")]
     public static partial void TorrentRetained(
         this ILogger logger,

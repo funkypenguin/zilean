@@ -15,7 +15,7 @@
       "EnableEndpoint": true
     },
     "Database": {
-      "ConnectionString": "Host=localhost;Database=zilean;Username=postgres;Password=$POSTGRES_PASSWORD;Include Error Detail=true;Timeout=30;CommandTimeout=3600;"
+      "ConnectionString": "Host=localhost;Database=zilean;Username=postgres;Password=changeme;Include Error Detail=true;Timeout=30;CommandTimeout=3600;"
     },
     "Torrents": {
       "EnableEndpoint": true,
@@ -26,7 +26,10 @@
     "Imdb": {
       "EnableImportMatching": true,
       "EnableEndpoint": true,
-      "MinimumScoreMatch": 0.85
+      "MinimumScoreMatch": 0.85,
+      "UseAllCores": true,
+      "NumberOfCores": 2,
+      "UseLucene": true
     },
     "Ingestion": {
       "ZurgInstances": [{
@@ -57,7 +60,10 @@
       "RequestTimeout": 10000
     },
     "Parsing": {
-      "BatchSize": 5000
+      "BatchSize": 50000,
+      "ParsingType": "Python",
+      "SocketPath": "/tmp/zilean-torrent-parser.sock",
+      "WorkerCount": 4
     }
   }
 }

@@ -2,7 +2,7 @@ namespace Zilean.Scraper.Features.Ingestion.Dmm;
 
 public class DmmScraping(
     DmmFileDownloader downloader,
-    ParseTorrentNameService parseTorrentNameService,
+    IRustGrpcService rustGrpcService,
     ITorrentInfoService torrentInfoService,
     ZileanConfiguration configuration,
     ILogger<DmmScraping> logger,
@@ -13,7 +13,9 @@ public class DmmScraping(
     {
         try
         {
-            var processor = new DmmFileEntryProcessor(dmmService, torrentInfoService, parseTorrentNameService, loggerFactory, configuration);
+            await rustGrpcService.IngestImdbData(new());
+
+            var processor = new DmmFileEntryProcessor(dmmService, torrentInfoService, rustGrpcService, loggerFactory, configuration);
 
             var (dmmLastImport, created) = await RetrieveAndInitializeDmmLastImport(cancellationToken);
 
@@ -76,7 +78,7 @@ public class DmmScraping(
             return (dmmLastImport, false);
         }
 
-        dmmLastImport = new DmmLastImport();
+        dmmLastImport = new();
         return (dmmLastImport, true);
     }
 

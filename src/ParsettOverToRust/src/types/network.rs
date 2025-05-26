@@ -1,0 +1,21 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Network {
+    Unknown = 0,
+    AppleTV = 1,
+    Amazon = 2,
+    Netflix = 3,
+    HBO = 4,
+    Disney = 5,
+    Nickelodeon = 6,
+    Hulu = 7,
+    CBS = 8,
+    NBC = 9,
+    AMC = 10,
+    PBS = 11,
+    Crunchyroll = 12,
+    VICE = 13,
+    Sony = 14,
+    Hallmark = 15,
+    AdultSwim = 16,
+    AnimalPlanet = 17,
+}

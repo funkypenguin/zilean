@@ -1,6 +1,8 @@
-﻿namespace Zilean.ApiService.Features.Dashboard.Components.Pages.Dashboard;
+﻿using Zilean.Shared.Features.Grpc;
 
-public class DashboardDataAdapter(IServiceProvider serviceProvider, ParseTorrentNameService parseTorrentNameService, ILogger<DashboardDataAdapter> logger) : DataAdaptor
+namespace Zilean.ApiService.Features.Dashboard.Components.Pages.Dashboard;
+
+public class DashboardDataAdapter(IServiceProvider serviceProvider, IRustGrpcService rustGrpcService, ILogger<DashboardDataAdapter> logger) : DataAdaptor
 {
     public override async Task<object> ReadAsync(DataManagerRequest dataManagerRequest, string? key = null)
     {
@@ -171,7 +173,9 @@ public class DashboardDataAdapter(IServiceProvider serviceProvider, ParseTorrent
 
     private async Task<TorrentInfo> UpdateTorrentAttributes(DashboardTorrentDetails incoming, TorrentInfo torrent, bool isCreate = false)
     {
-        torrent = await parseTorrentNameService.ParseAndPopulateTorrentInfoAsync(torrent);
+        await rustGrpcService.StartServer();
+        torrent = await rustGrpcService.ParseAndPopulateTorrentInfoAsync(torrent);
+        await rustGrpcService.StopServer();
         torrent.CleanedParsedTitle = Parsing.CleanQuery(torrent.ParsedTitle);
 
         if (isCreate)

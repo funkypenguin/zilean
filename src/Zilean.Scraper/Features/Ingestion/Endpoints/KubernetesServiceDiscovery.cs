@@ -40,7 +40,7 @@ public class KubernetesServiceDiscovery(
                     var url = BuildUrlFromService(service);
                     if (!string.IsNullOrEmpty(url))
                     {
-                        urls.Add(new GenericEndpoint
+                        urls.Add(new()
                         {
                             EndpointType = service.Selector.EndpointType,
                             Url = url,

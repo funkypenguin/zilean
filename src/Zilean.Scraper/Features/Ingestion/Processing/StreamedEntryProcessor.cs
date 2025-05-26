@@ -1,11 +1,13 @@
-﻿namespace Zilean.Scraper.Features.Ingestion.Processing;
+﻿using Zilean.Shared.Features.Imdb;
+
+namespace Zilean.Scraper.Features.Ingestion.Processing;
 
 public class StreamedEntryProcessor(
     ITorrentInfoService torrentInfoService,
-    ParseTorrentNameService parseTorrentNameService,
+    IRustGrpcService rustGrpcService,
     ILoggerFactory loggerFactory,
     IHttpClientFactory clientFactory,
-    ZileanConfiguration configuration) : GenericProcessor<StreamedEntry>(loggerFactory, torrentInfoService, parseTorrentNameService, configuration)
+    ZileanConfiguration configuration) : GenericProcessor<StreamedEntry>(loggerFactory, torrentInfoService, rustGrpcService, configuration)
 {
     private GenericEndpoint? _currentEndpoint;
 
@@ -29,7 +31,7 @@ public class StreamedEntryProcessor(
         {
             if (_currentEndpoint is null)
             {
-                _logger.LogError("Endpoint not set before calling ProduceEntriesAsync.");
+                _logger.LogError("Endpoint not set before calling ProduceEntriesAsync");
                 throw new InvalidOperationException("Endpoint not set");
             }
 

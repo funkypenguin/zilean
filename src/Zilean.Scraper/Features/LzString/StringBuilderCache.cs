@@ -9,14 +9,14 @@ public static class StringBuilderCache
     {
         if (capacity > 360)
         {
-            return new StringBuilder(capacity);
+            return new(capacity);
         }
 
         var sb = _cachedInstance;
 
         if (sb == null || capacity > sb.Capacity)
         {
-            return new StringBuilder(capacity);
+            return new(capacity);
         }
 
         _cachedInstance = null;

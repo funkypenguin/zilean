@@ -1,4 +1,4 @@
-using Zilean.ApiService.Features.Dashboard.Components.Pages.Dashboard;
+using Zilean.Shared.Features.Grpc;
 
 namespace Zilean.ApiService.Features.Bootstrapping;
 
@@ -86,7 +86,8 @@ public static class ServiceCollectionExtensions
         services.AddSyncfusionBlazor();
 
         services.AddScoped<DashboardDataAdapter>();
-        services.AddSingleton<ParseTorrentNameService>();
+
+        services.AddGrpcSupport();
 
         return services;
     }
