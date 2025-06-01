@@ -1,6 +1,7 @@
 using Lucene.Net.Documents;
 using Lucene.Net.Index;
 using Lucene.Net.Search;
+using Zilean.Shared.Features.Torrents;
 
 namespace Zilean.Database.Services.Lucene;
 

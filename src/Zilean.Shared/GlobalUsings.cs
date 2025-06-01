@@ -32,3 +32,5 @@ global using Zilean.Shared.Features.Torznab.Categories;
 global using Zilean.Shared.Features.Torznab.Info;
 global using Zilean.Shared.Features.Torznab.Parameters;
 global using Zilean.Shared.Features.Utilities;
+global using TorrentInfo = Zilean.Shared.Features.Torrents.TorrentInfo;
+global using ProtoTorrentInfo = Zilean.Proto.RustServer.TorrentInfo;

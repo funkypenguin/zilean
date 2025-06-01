@@ -1,4 +1,4 @@
-namespace Zilean.Database.Services;
+namespace Zilean.Shared.Features.Torrents;
 
 public interface ITorrentInfoService
 {

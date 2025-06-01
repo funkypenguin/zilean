@@ -1,12 +1,14 @@
+using Zilean.Shared.Features.Torrents;
 using GrpcClient = Zilean.Proto.RustServer.ZileanRustServer.ZileanRustServerClient;
 
 namespace Zilean.Shared.Features.Grpc;
 
-public class RustGrpcService(ILogger<GrpcClient> logger, ZileanConfiguration configuration)
+public class RustGrpcService(ILogger<GrpcClient> logger, ZileanConfiguration configuration, ITorrentInfoService torrentInfoService)
     : BaseGrpcService<GrpcClient>(logger), IRustGrpcService
 {
     private const string AppBinary = "/app/zilean_rust";
     private readonly ObjectPool<ConcurrentDictionary<string, string?>> _imdbCache = new DefaultObjectPoolProvider().Create<ConcurrentDictionary<string, string?>>();
+    private readonly ObjectPool<List<TorrentInfo>> _storageBatch = new DefaultObjectPoolProvider().Create<List<TorrentInfo>>();
     protected override string SocketPath => "/tmp/zilean_rust.sock";
     protected override async Task ShutdownClientAsync(GrpcClient client) => await client.ShutdownAsync(new());
     public override async Task StartServer()
@@ -41,7 +43,7 @@ public class RustGrpcService(ILogger<GrpcClient> logger, ZileanConfiguration con
         await PostServerInitialization();
     }
 
-    public async Task IngestImdbData(IngestImdbRequest ingestImdbRequest)
+    public async Task IngestImdbData(IngestImdbRequest ingestImdbRequest, CancellationToken cancellationToken = default)
     {
         await StartServer();
 
@@ -50,7 +52,7 @@ public class RustGrpcService(ILogger<GrpcClient> logger, ZileanConfiguration con
             throw new InvalidOperationException("Rust gRPC client is not initialized.");
         }
 
-        await _client.IngestImdbAsync(ingestImdbRequest, cancellationToken: _grpcCts?.Token ?? CancellationToken.None);
+        await _client.IngestImdbAsync(ingestImdbRequest, cancellationToken: cancellationToken);
     }
 
     public async Task ParseAndPopulateAsync(Dictionary<string, ExtractedDmmEntry> torrents, List<TorrentInfo> output, int batchSize = 5000)
@@ -108,7 +110,7 @@ public class RustGrpcService(ILogger<GrpcClient> logger, ZileanConfiguration con
                 continue;
             }
 
-            var result = ParseResult(response);
+            var result = response.ParseTorrentTitleResponse(logger);
 
             if (result.Success)
             {
@@ -119,6 +121,65 @@ public class RustGrpcService(ILogger<GrpcClient> logger, ZileanConfiguration con
                 output.Add(result.Response);
             }
         }
+    }
+
+    public async Task IngestDmmPagesAsync(CancellationToken cancellationToken = default)
+    {
+        await StartServer();
+
+        logger.LogDebug("Ingesting DMM pages with Storage Batch Size of {BatchSize}", configuration.Parsing.StorageBatchSize);
+
+        if (_client is null)
+        {
+            throw new InvalidOperationException("Rust GRPC client is not initialized.");
+        }
+
+        var input = Channel.CreateBounded<TorrentInfo>(new BoundedChannelOptions(configuration.Parsing.StorageBatchSize)
+        {
+            SingleWriter = true,
+            SingleReader = true,
+            FullMode = BoundedChannelFullMode.Wait,
+        });
+
+        var reader = input.Reader;
+        var writer = input.Writer;
+
+        var consumer = Task.Run(async () =>
+        {
+            var storageBuffer = _storageBatch.Get();
+            storageBuffer.Capacity = configuration.Parsing.StorageBatchSize;
+
+            await foreach (var torrent in reader.ReadAllAsync(cancellationToken))
+            {
+                storageBuffer.Add(torrent);
+
+                if (storageBuffer.Count < configuration.Parsing.StorageBatchSize)
+                {
+                    continue;
+                }
+
+                await torrentInfoService.BulkCopyTorrentsAsync(storageBuffer, cancellationToken);
+                storageBuffer.Clear();
+            }
+
+            if (storageBuffer.Count > 0)
+            {
+                await torrentInfoService.BulkCopyTorrentsAsync(storageBuffer, cancellationToken);
+            }
+
+            storageBuffer.Clear();
+            _storageBatch.Return(storageBuffer);
+        }, cancellationToken);
+
+        var call = _client.IngestDmmPages(new(), cancellationToken: cancellationToken);
+
+        await foreach (var entry in call.ResponseStream.ReadAllAsync(cancellationToken))
+        {
+            await writer.WriteAsync(TorrentInfo.FromProto(entry.TorrentInfo), cancellationToken);
+        }
+
+        writer.Complete();
+        await consumer;
     }
 
     public async Task<TorrentInfo> ParseAndPopulateTorrentInfoAsync(TorrentInfo torrent)
@@ -136,81 +197,11 @@ public class RustGrpcService(ILogger<GrpcClient> logger, ZileanConfiguration con
         await call.RequestStream.CompleteAsync();
 
         return await call.ResponseStream.MoveNext()
-            ? ParseResult(call.ResponseStream.Current).Response
+            ? call.ResponseStream.Current.ParseTorrentTitleResponse(logger).Response
             : throw new InvalidOperationException("No response received from gRPC server");
     }
 
-    private ParseTorrentTitleResponse ParseResult(TorrentTitleResponse response)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(response.Title))
-            {
-                return new(false, null);
-            }
 
-            var torrentInfo = new TorrentInfo
-            {
-                ParsedTitle = response.Title,
-                RawTitle = response.OriginalTitle,
-                NormalizedTitle = response.Title.ToLowerInvariant(),
-                Audio = [.. response.Audio],
-                BitDepth = response.BitDepth,
-                Channels = [.. response.Channels],
-                Codec = response.Codec.ToString(),
-                Complete = response.Complete,
-                Container = response.Container,
-                Date = response.Date,
-                Documentary = response.Documentary,
-                Dubbed = response.Dubbed,
-                Edition = response.Edition,
-                EpisodeCode = response.EpisodeCode,
-                Episodes = [.. response.Episodes],
-                Extended = response.Extended,
-                Extension = response.Extension,
-                Group = response.Group,
-                Hdr = [.. response.Hdr],
-                Hardcoded = response.Hardcoded,
-                Languages = [.. response.Languages.Select(x=> x.ToString())],
-                Network = response.Network.ToString(),
-                Proper = response.Proper,
-                Quality = response.Quality.ToString(),
-                Region = response.Region,
-                Remastered = response.Remastered,
-                Repack = response.Repack,
-                Resolution = response.Resolution,
-                Retail = response.Retail,
-                Seasons = [.. response.Seasons],
-                Site = response.Site,
-                Size = response.Size,
-                Subbed = response.Subbed,
-                Unrated = response.Unrated,
-                Upscaled = response.Upscaled,
-                Volumes = [.. response.Volumes],
-                Year = response.Year,
-                IsAdult = response.Adult,
-                Is3d = response.Is3D,
-                Trash = response.Trash,
-            };
-
-            var mediaType = InferMediaType(torrentInfo);
-
-            torrentInfo.Category = torrentInfo.IsAdult ? "xxx" :
-                mediaType.Equals("movie", StringComparison.OrdinalIgnoreCase) ? "movie" : "tvSeries";
-
-            return new(true, torrentInfo);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error occurred while parsing response");
-            return new(false, null);
-        }
-    }
-
-    private static string InferMediaType(TorrentInfo info) =>
-        info.Seasons.Length > 0 || info.Episodes.Length > 0
-            ? "tvSeries"
-            : "movie";
 
     private static string GetDatabaseUrl(ZileanConfiguration zileanConfiguration)
     {

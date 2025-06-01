@@ -36,7 +36,6 @@ public static class ServiceCollectionExtensions
 
     private static void AddDmmServices(this IServiceCollection services)
     {
-        services.AddSingleton<DmmFileDownloader>();
         services.AddSingleton<DmmScraping>();
         services.AddTransient<DmmService>();
     }

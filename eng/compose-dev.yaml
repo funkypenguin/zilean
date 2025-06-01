@@ -30,7 +30,7 @@ services:
     tty: true
     environment:
       Zilean__Database__ConnectionString: "Host=postgres;Database=zilean;Username=postgres;Password=postgres;Include Error Detail=true;Timeout=30;CommandTimeout=3600;"
-      Zilean__Parsing__ParsingThreads: 8
+      Zilean__Parsing__ParsingThreads: 6
     restart: no
     volumes:
       - zilen_data:/app/data

@@ -1,3 +1,6 @@
+using Zilean.Shared.Features.Grpc;
+using Zilean.Shared.Features.Torrents;
+
 namespace Zilean.Database.Services;
 
 public class TorrentInfoService(
@@ -73,7 +76,11 @@ public class TorrentInfoService(
 
             await GetExistingInfoHashesAsync(conn, existing, infoHashes, cancellationToken);
 
-            var filtered = torrents.Where(t => !existing.Contains(t.InfoHash));
+            var filtered = torrents
+                .DistinctBy(t => t.InfoHash)
+                .Where(t => !string.IsNullOrEmpty(t.InfoHash))
+                .Where(t => t.InfoHash!.Length == 40) // Ensure valid infohash length
+                .ExceptBy(existing, t => t.InfoHash); // Exclude existing info hashes
 
             await using var writer = await conn.BeginBinaryImportAsync(
                 """

@@ -8,8 +8,13 @@
     <PackageVersion Include="DotMake.CommandLine" Version="2.4.0" />
     <PackageVersion Include="EFCore.BulkExtensions.PostgreSql" Version="9.0.1" />
     <PackageVersion Include="FluentAssertions" Version="8.3.0" />
-    <PackageVersion Include="Grpc.AspNetCore" Version="2.71.0">
+    <PackageVersion Include="Google.Protobuf" Version="3.31.1" />
+    <PackageVersion Include="Grpc.AspNetCore" Version="2.67.0">
       <PrivateAssets>all</PrivateAssets>
+    </PackageVersion>
+    <PackageVersion Include="Grpc.Tools" Version="2.68.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
     <PackageVersion Include="Lucene.Net" Version="4.8.0-beta00017" />
     <PackageVersion Include="Lucene.Net.Analysis.Common" Version="4.8.0-beta00017" />

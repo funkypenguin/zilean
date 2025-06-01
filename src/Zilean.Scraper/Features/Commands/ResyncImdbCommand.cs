@@ -1,4 +1,6 @@
-﻿namespace Zilean.Scraper.Features.Commands;
+﻿using Zilean.Shared.Features.Torrents;
+
+namespace Zilean.Scraper.Features.Commands;
 
 public class ResyncImdbCommand : BaseCommand
 {

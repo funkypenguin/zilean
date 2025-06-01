@@ -1,6 +1,7 @@
 using Raffinert.FuzzySharp;
 using Raffinert.FuzzySharp.PreProcess;
 using Zilean.Shared.Extensions;
+using Zilean.Shared.Features.Torrents;
 
 namespace Zilean.Database.Services.FuzzyString;
 

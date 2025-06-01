@@ -1,3 +1,5 @@
+using Zilean.Shared.Features.Torrents;
+
 namespace Zilean.Database.Services;
 
 public class TorrentInfoResult : TorrentInfo

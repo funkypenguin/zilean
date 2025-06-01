@@ -1,4 +1,6 @@
-﻿namespace Zilean.ApiService.Features.Dashboard.Components.Pages.Dashboard;
+﻿using Zilean.Shared.Features.Torrents;
+
+namespace Zilean.ApiService.Features.Dashboard.Components.Pages.Dashboard;
 
 public class DashboardTorrentDetails
 {

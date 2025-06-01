@@ -1,3 +1,6 @@
+using Zilean.Shared.Features.Grpc;
+using Zilean.Shared.Features.Torrents;
+
 namespace Zilean.Database.Bootstrapping;
 
 public static class ServiceCollectionExtensions

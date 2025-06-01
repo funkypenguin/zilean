@@ -1,11 +1,14 @@
 using Zilean.Proto.RustServer;
 using Zilean.Shared.Features.Grpc;
+using Zilean.Shared.Features.Torrents;
+using TorrentInfo = Zilean.Shared.Features.Torrents.TorrentInfo;
 
 namespace Zilean.Tests.Tests;
 
 public class ImdbRustTests(ITestOutputHelper output)
 {
     private readonly ILogger<ZileanRustServer.ZileanRustServerClient> _logger = Substitute.For<ILogger<ZileanRustServer.ZileanRustServerClient>>();
+    private readonly ITorrentInfoService _infoService = Substitute.For<ITorrentInfoService>();
 
     private readonly ZileanConfiguration _zileanConfiguration = new()
     {
@@ -26,7 +29,7 @@ public class ImdbRustTests(ITestOutputHelper output)
             torrent => torrent.InfoHash!,
             torrent => torrent);
 
-        var imdbMatchingService = new RustGrpcService(_logger, _zileanConfiguration);
+        var imdbMatchingService = new RustGrpcService(_logger, _zileanConfiguration, _infoService);
 
         await imdbMatchingService.StartServer();
 
@@ -67,7 +70,7 @@ public class ImdbRustTests(ITestOutputHelper output)
             torrent => torrent.InfoHash!,
             torrent => torrent);
 
-        var imdbMatchingService = new RustGrpcService(_logger, _zileanConfiguration);
+        var imdbMatchingService = new RustGrpcService(_logger, _zileanConfiguration, _infoService);
 
         await imdbMatchingService.StartServer();
 
@@ -108,7 +111,7 @@ public class ImdbRustTests(ITestOutputHelper output)
             torrent => torrent.InfoHash!,
             torrent => torrent);
 
-        var imdbMatchingService = new RustGrpcService(_logger, _zileanConfiguration);
+        var imdbMatchingService = new RustGrpcService(_logger, _zileanConfiguration, _infoService);
 
         await imdbMatchingService.StartServer();
 
@@ -136,7 +139,7 @@ public class ImdbRustTests(ITestOutputHelper output)
     [Fact]
     public async Task IngestImdbData_DoesNotThrow()
     {
-        var imdbMatchingService = new RustGrpcService(_logger, _zileanConfiguration);
+        var imdbMatchingService = new RustGrpcService(_logger, _zileanConfiguration, _infoService);
 
         var exception = await Record.ExceptionAsync(async () =>
         {
@@ -154,7 +157,7 @@ public class ImdbRustTests(ITestOutputHelper output)
     [Fact]
     public async Task StartAndStopServer_DoesNotThrow()
     {
-        var imdbMatchingService = new RustGrpcService(_logger, _zileanConfiguration);
+        var imdbMatchingService = new RustGrpcService(_logger, _zileanConfiguration, _infoService);
 
         var exception = await Record.ExceptionAsync(async () =>
         {

@@ -2,6 +2,7 @@ use std::path::Path;
 use git2::{Repository, FetchOptions, RemoteCallbacks};
 use anyhow::{Context, Result};
 use std::fs;
+use std::sync::Arc;
 
 pub struct DmmRepoManager {
     pub repo_url: String,
@@ -32,7 +33,29 @@ impl DmmRepoManager {
         }
 
         tracing::debug!("Cloning repo from {} into {:?}", self.repo_url, path);
-        Repository::clone(&self.repo_url, path).context("Failed to clone repo")?;
+
+        let username = std::env::var("ZILEAN_GITHUB_USERNAME").ok();
+        let token = std::env::var("ZILEAN_GITHUB_TOKEN").ok();
+
+        let mut cb = RemoteCallbacks::new();
+        cb.credentials(move |_, _, _| {
+            if let (Some(user), Some(tok)) = (&username, &token) {
+                git2::Cred::userpass_plaintext(user, tok)
+            } else {
+                git2::Cred::default()
+            }
+        });
+
+        let mut fetch_opts = FetchOptions::new();
+        fetch_opts.remote_callbacks(cb);
+
+        let mut builder = git2::build::RepoBuilder::new();
+        builder.fetch_options(fetch_opts);
+
+        builder
+            .clone(&self.repo_url, path)
+            .context("Failed to clone repo with credentials")?;
+
         Ok(())
     }
 
@@ -40,23 +63,35 @@ impl DmmRepoManager {
         let repo = Repository::open(path).context("Failed to open existing repo")?;
         let mut remote = repo.find_remote("origin").context("No 'origin' remote found")?;
 
+        let config = Arc::new(repo.config().context("Failed to get git config")?);
+        let username = std::env::var("ZILEAN_GITHUB_USERNAME").ok();
+        let token = std::env::var("ZILEAN_GITHUB_TOKEN").ok();
+
         let mut cb = RemoteCallbacks::new();
-        cb.credentials(|_, _, _| {
-            git2::Cred::default()
+        cb.credentials(move |url, username_from_url, _| {
+            let config = Arc::clone(&config);
+            if let (Some(user), Some(tok)) = (&username, &token) {
+                git2::Cred::userpass_plaintext(user, tok)
+            } else {
+                git2::Cred::credential_helper(&config, url, username_from_url)
+                    .or_else(|_| git2::Cred::default())
+            }
         });
 
         let mut fo = FetchOptions::new();
         fo.remote_callbacks(cb);
 
         tracing::debug!("Fetching from origin/main");
-        remote.fetch(&["main"], Some(&mut fo), None).context("Failed to fetch from origin")?;
+        remote
+            .fetch(&["main"], Some(&mut fo), None)
+            .context("Failed to fetch from origin")?;
 
         let fetch_head = repo.find_reference("FETCH_HEAD")?;
         let fetch_commit = repo.reference_to_annotated_commit(&fetch_head)?;
 
         let mut refspec = repo.find_reference("refs/heads/main")
             .or_else(|_| repo.head())?;
-        
+
         let analysis = repo.merge_analysis(&[&fetch_commit])?;
         if analysis.0.is_up_to_date() {
             tracing::debug!("Already up to date.");

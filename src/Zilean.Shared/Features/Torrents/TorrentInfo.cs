@@ -1,4 +1,4 @@
-namespace Zilean.Shared.Features.Dmm;
+namespace Zilean.Shared.Features.Torrents;
 
 public class TorrentInfo
 {
@@ -154,4 +154,59 @@ public class TorrentInfo
 
     [JsonPropertyName("ingested_at")]
     public DateTime IngestedAt { get; set; } = DateTime.UtcNow;
+
+    public static TorrentInfo FromProto(ProtoTorrentInfo proto) =>
+        new()
+        {
+            RawTitle = proto.RawTitle,
+            ParsedTitle = proto.ParsedTitle,
+            NormalizedTitle = proto.NormalizedTitle,
+            BitDepth = proto.BitDepth,
+            Bitrate = proto.Bitrate,
+            Extended = proto.Extended,
+            Converted = proto.Convert,
+            Hardcoded = proto.Hardcoded,
+            Region = proto.Region,
+            Ppv = proto.Ppv,
+            Is3d = proto.Is3D,
+            Site = proto.Site,
+            Size = proto.Size,
+            Proper = proto.Proper,
+            Repack = proto.Repack,
+            Retail = proto.Retail,
+            Upscaled = proto.Upscaled,
+            Remastered = proto.Remastered,
+            Unrated = proto.Unrated,
+            Documentary = proto.Documentary,
+            EpisodeCode = proto.EpisodeCode,
+            Country = proto.Country,
+            Container = proto.Container,
+            Extension = proto.Extension,
+            Torrent = proto.Torrent,
+            Category = proto.Category,
+            ImdbId = string.IsNullOrEmpty(proto.ImdbId) ? null : proto.ImdbId,
+            InfoHash = proto.InfoHash,
+            IsAdult = proto.IsAdult,
+            Dubbed = proto.Dubbed,
+            Subbed = proto.Subbed,
+            Date = proto.Date,
+            Group = proto.Group,
+            Edition = proto.Edition,
+            CleanedParsedTitle = proto.CleanedParsedTitle,
+            Trash = proto.Trash,
+            Year = proto.Year,
+            Resolution = proto.Resolution,
+            IngestedAt = DateTime.UtcNow,
+            Quality = proto.Quality.ToString(),
+            Codec = proto.Codec.ToString(),
+            Network = proto.Network.ToString(),
+            Channels = [.. proto.Channels],
+            Seasons = [..proto.Seasons],
+            Episodes = [..proto.Episodes],
+            Complete = proto.Complete,
+            Volumes = [.. proto.Volumes],
+            Hdr = [.. proto.Hdr],
+            Audio = [.. proto.Audio],
+            Languages = [.. proto.Languages.Select(x => x.ToString())],
+        };
 }

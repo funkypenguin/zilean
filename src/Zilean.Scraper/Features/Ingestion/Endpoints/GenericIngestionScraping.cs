@@ -1,4 +1,5 @@
 using Zilean.Shared.Features.Imdb;
+using Zilean.Shared.Features.Torrents;
 
 namespace Zilean.Scraper.Features.Ingestion.Endpoints;
 

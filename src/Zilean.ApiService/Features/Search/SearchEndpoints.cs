@@ -1,3 +1,6 @@
+using Zilean.Shared.Features.Grpc;
+using Zilean.Shared.Features.Torrents;
+
 namespace Zilean.ApiService.Features.Search;
 
 public static class SearchEndpoints
