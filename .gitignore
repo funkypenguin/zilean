@@ -21,3 +21,5 @@ src/RustImdbMatching/tantivy_index/
 src/ParsettOverToRust/target/
 
 src/RustServer/target/
+
+src/RustServer/descriptor.bin
