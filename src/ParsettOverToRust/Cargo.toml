@@ -19,3 +19,11 @@ rayon = "1.10.0"
 [[bench]]
 name = "parse"
 harness = false
+
+[[bench]]
+name = "parse_batch_4_cores"
+harness = false
+
+[[bench]]
+name = "parse_batch_8_cores"
+harness = false
