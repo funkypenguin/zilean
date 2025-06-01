@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 mod codec;
 mod language;
 mod network;

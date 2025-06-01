@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 pub mod extensions;
 pub mod handler_wrapper;
 pub mod parser;
