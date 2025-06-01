@@ -1,5 +1,5 @@
 use crate::proto;
-use crate::proto::TorrentTitleResponse;
+use crate::proto::{TorrentInfo, TorrentTitleResponse};
 use parsett_rust::ParsedTitle;
 
 pub fn map_parsed_title(
@@ -57,6 +57,131 @@ pub fn map_parsed_title(
         size: parsed.size,
         network: parsed.network.map(|n| proto::Network::from(n) as i32),
         scene: parsed.scene,
+    }
+}
+
+pub fn map_torrent_info(
+    info_hash: &str,
+    original_title: &str,
+    bytes: i64,
+    parsed: ParsedTitle,
+) -> TorrentInfo {
+    let ParsedTitle {
+        title,
+        resolution,
+        date,
+        year,
+        ppv,
+        trash,
+        adult,
+        edition,
+        extended,
+        convert,
+        hardcoded,
+        proper,
+        repack,
+        retail,
+        remastered,
+        unrated,
+        region,
+        bitrate,
+        bit_depth,
+        hdr,
+        audio,
+        channels,
+        group,
+        container,
+        volumes,
+        seasons,
+        episodes,
+        episode_code,
+        complete,
+        dubbed,
+        site,
+        extension,
+        subbed,
+        documentary,
+        upscaled,
+        is_3d,
+        extras,
+        size: _,
+        scene,
+        network,
+        codec,
+        quality,
+        languages,
+    } = parsed;
+
+    let category = assign_category(adult, &seasons, &episodes);
+    let parsed_title = title;
+    let normalized_title = parsed_title.to_lowercase();
+
+    TorrentInfo {
+        raw_title: original_title.into(),
+        parsed_title,
+        normalized_title,
+        cleaned_parsed_title: None,
+        info_hash: info_hash.into(),
+        resolution,
+        date,
+        year,
+        ppv,
+        trash,
+        is_adult: adult,
+        edition,
+        extended,
+        convert,
+        hardcoded,
+        proper,
+        repack,
+        retail,
+        remastered,
+        unrated,
+        region,
+        bitrate,
+        bit_depth,
+        hdr,
+        audio,
+        channels,
+        group,
+        container,
+        volumes,
+        seasons,
+        episodes,
+        episode_code,
+        complete,
+        dubbed,
+        site,
+        extension,
+        torrent: None,
+        category,
+        subbed,
+        documentary,
+        upscaled,
+        is_3d,
+        extras,
+        size: Some(bytes.to_string()),
+        scene,
+        country: None,
+        imdb_id: None,
+        ingested_at: chrono::Utc::now().to_string(),
+        network: network.map(|n| proto::Network::from(n) as i32),
+        codec: codec.map(|c| proto::Codec::from(c) as i32),
+        quality: quality.map(|q| proto::Quality::from(q) as i32),
+        languages: languages
+            .into_iter()
+            .map(|l| proto::Language::from(l) as i32)
+            .collect(),
+    }
+}
+
+fn assign_category(adult: bool, seasons: &[i32], episodes: &[i32]) -> String {
+    if adult {
+        "xxx".to_string()
+    } else if seasons.is_empty() && episodes.is_empty() {
+        "movie".to_string()
+    } else {
+        "tvSeries".to_string()
     }
 }
 

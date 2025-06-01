@@ -5,7 +5,7 @@ option csharp_namespace = "Zilean.Proto.RustServer";
 
 service ZileanRustServer {
   rpc IngestImdb (IngestImdbRequest) returns (IngestImdbResponse);
-  rpc IngestDmmPages (IngestDmmPagesRequest) returns (IngestDmmPagesResponse);
+  rpc IngestDmmPages (IngestDmmPagesRequest) returns (stream ParsedDmmPageEntry);
   rpc SearchImdb (SearchImdbRequest) returns (SearchImdbResponse);
   rpc ParseTorrentTitles (stream TorrentTitleRequest) returns (stream TorrentTitleResponse);
   rpc Shutdown (ShutdownRequest) returns (ShutdownResponse);
@@ -41,6 +41,66 @@ message IngestDmmPagesRequest {
 
 message IngestDmmPagesResponse {
   bool success = 1;
+}
+
+message TorrentInfo {
+  string raw_title = 1;
+  string parsed_title = 2;
+  string normalized_title = 3;
+  optional string cleaned_parsed_title = 4;
+  bool trash = 5;
+  optional int32 year = 6;
+  optional string resolution = 7;
+  repeated int32 seasons = 8;
+  repeated int32 episodes = 9;
+  bool complete = 10;
+  repeated int32 volumes = 11;
+  repeated Language languages = 12;
+  optional Quality quality = 13;
+  repeated string hdr = 14;
+  optional Codec codec = 15;
+  repeated string audio = 16;
+  repeated string channels = 17;
+  bool dubbed = 18;
+  bool subbed = 19;
+  optional string date = 20;
+  optional string group = 21;
+  optional string edition = 22;
+  optional string bit_depth = 23;
+  optional string bitrate = 24;
+  optional Network network = 25;
+  bool extended = 26;
+  bool hardcoded = 27;
+  optional string region = 28;
+  bool ppv = 29;
+  bool is_3d = 30;
+  optional string site = 31;
+  optional string size = 32;
+  bool proper = 33;
+  bool repack = 34;
+  bool retail = 35;
+  bool upscaled = 36;
+  bool remastered = 37;
+  bool unrated = 38;
+  bool documentary = 39;
+  optional string episode_code = 40;
+  optional string country = 41;
+  optional string container = 42;
+  optional string extension = 43;
+  optional bool torrent = 44;
+  string category = 45;
+  optional string imdb_id = 46;
+  string info_hash = 47;
+  bool is_adult = 48;
+  string ingested_at = 49; // RFC3339 string
+  bool convert = 50;
+  repeated string extras = 51;
+  bool scene = 52;
+}
+
+message ParsedDmmPageEntry {
+  string filename = 1;
+  TorrentInfo torrent_info = 2;
 }
 
 enum Codec {

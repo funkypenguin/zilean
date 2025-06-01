@@ -5,6 +5,7 @@ use std::path::Path;
 use tantivy::query::{Occur, PhraseQuery, Query, RangeQuery};
 use tantivy::schema::{Field, INDEXED, STORED, STRING, Schema, TEXT, Value};
 use tantivy::{Index, IndexReader, TantivyDocument, Term};
+use tracing::{debug, info};
 
 pub const INDEX_PATH: &str = "./data/tantivy_index";
 
@@ -140,7 +141,7 @@ impl ImdbSearcher {
             .search(&query, &tantivy::collector::TopDocs::with_limit(5))
             .unwrap_or_default();
 
-        top_docs
+        let results: Vec<Match> = top_docs
             .into_iter()
             .filter_map(|(_, addr)| {
                 let retrieved: TantivyDocument = searcher.doc(addr).ok()?;
@@ -151,6 +152,16 @@ impl ImdbSearcher {
                     score: 1.0,
                 })
             })
-            .collect()
+            .collect();
+
+        let results_len = results.len();
+
+        if results_len == 0 {
+            debug!("No matches found for title: {}, category: {}, year: {}", title, category, year);
+        } else {
+            info!("Found {} matches for title: {}, category: {}, year: {}", results_len, title, category, year);
+        }
+
+        results
     }
 }

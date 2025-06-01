@@ -13,7 +13,7 @@ use crate::grpc::handler::{SharedState, ZileanService};
 use crate::imdb::{ImdbIngestor, ImdbSearcher};
 use crate::proto::zilean_rust_server_server::ZileanRustServerServer;
 
-const DESCRIPTOR_BYTES: &[u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/descriptor.bin"));
+const DESCRIPTOR_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
 
 fn cleanup_socket() -> anyhow::Result<()> {
     if Path::new(constants::ZILEAN_SOCKET_PATH).exists() {
@@ -40,6 +40,7 @@ pub async fn start_server(app_config: AppConfig) -> anyhow::Result<()> {
     tracing::info!("Zilean gRPC server listening on unix://{}", constants::ZILEAN_SOCKET_PATH);
 
     Server::builder()
+        .max_frame_size(10 * 1024 * 1024)
         .add_service(ZileanRustServerServer::new(service))
         .add_service(reflection_service)
         .serve_with_incoming_shutdown(incoming, shutdown_notify.notified())
@@ -64,6 +65,7 @@ async fn construct_state(app_config: AppConfig, shutdown_notify: Arc<Notify>) ->
 
     let dmm_page_parser = Arc::new(DmmFileEntryProcessor::new(
         dmm_service,
+        searcher.clone(),
         app_config.dmm_local_path.clone()));
 
     Arc::new(SharedState {

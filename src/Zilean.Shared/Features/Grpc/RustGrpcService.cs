@@ -209,7 +209,7 @@ public class RustGrpcService(ILogger<GrpcClient> logger, ZileanConfiguration con
 
     private static string InferMediaType(TorrentInfo info) =>
         info.Seasons.Length > 0 || info.Episodes.Length > 0
-            ? "tv"
+            ? "tvSeries"
             : "movie";
 
     private static string GetDatabaseUrl(ZileanConfiguration zileanConfiguration)

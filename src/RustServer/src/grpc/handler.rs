@@ -4,7 +4,6 @@ use tokio::sync::{mpsc, Notify, RwLock};
 use tokio_stream::Stream;
 use tokio_stream::wrappers::{UnboundedReceiverStream};
 use parsett_rust::{parse_batch};
-use sqlx::testing::TestTermination;
 use tonic::{Request, Response, Status};
 use crate::configuration::config::AppConfig;
 use crate::dmm::page_parser::DmmFileEntryProcessor;
@@ -28,10 +27,8 @@ pub struct ZileanService {
     pub state: Arc<SharedState>,
 }
 
-type ParseTorrentTitlesStream = Pin<Box<dyn Stream<Item = Result<TorrentTitleResponse, Status>> + Send>>;
-
 #[tonic::async_trait]
-impl ZileanRustServer for ZileanService {
+impl<'a> ZileanRustServer for ZileanService {
     async fn ingest_imdb(
         &self,
         request: Request<IngestImdbRequest>,
@@ -45,17 +42,21 @@ impl ZileanRustServer for ZileanService {
         tracing::info!("Ingestion complete, indexed {} new documents", indexed);
         Ok(Response::new(IngestImdbResponse {}))
     }
+    type IngestDmmPagesStream = Pin<Box<dyn Stream<Item = Result<ParsedDmmPageEntry, Status>> + Send + 'static>>;
 
     async fn ingest_dmm_pages(
         &self,
-        _: Request<IngestDmmPagesRequest>,
-    ) -> Result<Response<IngestDmmPagesResponse>, Status> {
+        _request: Request<IngestDmmPagesRequest>,
+    ) -> Result<Response<Self::IngestDmmPagesStream>, Status> {
         tracing::info!("Performing DMM ingestion and scrape...");
-        self.state.dmm_repo_manager.sync_repo().unwrap();
-        let result = self.state.dmm_page_parser.perform_scrape().await.unwrap();
-        Ok(Response::new(IngestDmmPagesResponse {
-            success: result.is_success(),
-        }))
+
+        if let Err(err) = self.state.dmm_repo_manager.sync_repo() {
+            return Err(Status::internal(format!("Failed to sync repo: {err}")));
+        }
+
+        let parser = Arc::clone(&self.state.dmm_page_parser);
+        let stream = parser.stream_parsed_pages();
+        Ok(Response::new(Box::pin(stream)))
     }
 
     async fn search_imdb(
@@ -68,7 +69,7 @@ impl ZileanRustServer for ZileanService {
         Ok(Response::new(SearchImdbResponse { matches }))
     }
 
-    type ParseTorrentTitlesStream = ParseTorrentTitlesStream;
+    type ParseTorrentTitlesStream = Pin<Box<dyn Stream<Item = Result<TorrentTitleResponse, Status>> + Send>>;
 
 
     async fn parse_torrent_titles(
