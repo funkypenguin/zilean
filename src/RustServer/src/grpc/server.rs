@@ -4,10 +4,16 @@ use tokio::net::UnixListener;
 use tokio::sync::Notify;
 use tokio_stream::wrappers::UnixListenerStream;
 use tonic::transport::Server;
+use crate::configuration::config::AppConfig;
+use crate::dmm::dmm_service::PgDmmService;
+use crate::dmm::page_parser::DmmFileEntryProcessor;
+use crate::dmm::repo_manager::DmmRepoManager;
 use crate::grpc::constants;
-use crate::grpc::handler::ZileanService;
+use crate::grpc::handler::{SharedState, ZileanService};
 use crate::imdb::{ImdbIngestor, ImdbSearcher};
 use crate::proto::zilean_rust_server_server::ZileanRustServerServer;
+
+const DESCRIPTOR_BYTES: &[u8] = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/descriptor.bin"));
 
 fn cleanup_socket() -> anyhow::Result<()> {
     if Path::new(constants::ZILEAN_SOCKET_PATH).exists() {
@@ -16,21 +22,18 @@ fn cleanup_socket() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn start_server() -> anyhow::Result<()> {
+pub async fn start_server(app_config: AppConfig) -> anyhow::Result<()> {
     cleanup_socket()?;
-    
+
     let listener = UnixListener::bind(constants::ZILEAN_SOCKET_PATH)?;
     let incoming = UnixListenerStream::new(listener);
-
-    let searcher = Arc::new(tokio::sync::RwLock::new(ImdbSearcher::new()?));
-    let ingestor = Arc::new(ImdbIngestor::new(searcher.clone()));
     let shutdown_notify = Arc::new(Notify::new());
 
-    let state = Arc::new(crate::grpc::handler::SharedState {
-        searcher,
-        ingestor,
-        shutdown_notify: shutdown_notify.clone(),
-    });
+    let state = construct_state(app_config, shutdown_notify.clone()).await;
+
+    let reflection_service = tonic_reflection::server::Builder::configure()
+        .register_encoded_file_descriptor_set(DESCRIPTOR_BYTES)
+        .build_v1()?;
 
     let service = ZileanService { state };
 
@@ -38,10 +41,37 @@ pub async fn start_server() -> anyhow::Result<()> {
 
     Server::builder()
         .add_service(ZileanRustServerServer::new(service))
+        .add_service(reflection_service)
         .serve_with_incoming_shutdown(incoming, shutdown_notify.notified())
         .await?;
 
     cleanup_socket()?;
     tracing::info!("Zilean server shutdown complete");
     Ok(())
+}
+
+async fn construct_state(app_config: AppConfig, shutdown_notify: Arc<Notify>) -> Arc<SharedState> {
+    let app_config = Arc::new(app_config);
+    let searcher = Arc::new(tokio::sync::RwLock::new(ImdbSearcher::new().expect("Failed to initialize ImdbSearcher")));
+    let ingestor = Arc::new(ImdbIngestor::new(searcher.clone()));
+    let shutdown_notify = shutdown_notify;
+    let dmm_repo_manager = Arc::new(DmmRepoManager::new(
+        &app_config.dmm_repo_url,
+        &app_config.dmm_local_path
+    ));
+
+    let dmm_service = Arc::new(PgDmmService::connect(&app_config.database_url).await.unwrap());
+
+    let dmm_page_parser = Arc::new(DmmFileEntryProcessor::new(
+        dmm_service,
+        app_config.dmm_local_path.clone()));
+
+    Arc::new(SharedState {
+        searcher,
+        ingestor,
+        dmm_repo_manager,
+        dmm_page_parser,
+        shutdown_notify: shutdown_notify.clone(),
+        app_config
+    })
 }

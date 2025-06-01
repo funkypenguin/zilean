@@ -5,12 +5,16 @@ use tracing::info;
 #[derive(Debug, Default, serde::Deserialize, PartialEq, Eq)]
 pub(crate) struct AppConfig {
     pub parsing_threads: usize,
-    pub database_url: String
+    pub database_url: String,
+    pub dmm_repo_url: String,
+    pub dmm_local_path: String,
 }
 
 pub fn load_config() -> anyhow::Result<AppConfig> {
     let config = Config::builder()
         .set_default("parsing_threads", 4)?
+        .set_default("dmm_repo_url", "https://github.com/debridmediamanager/hashlists.git")?
+        .set_default("dmm_local_path", "./data/dmm-hashlists")?
         .add_source(config::Environment::with_prefix("ZILEAN"))
         .build()?;
 
@@ -25,9 +29,11 @@ pub fn load_config() -> anyhow::Result<AppConfig> {
     }
 
     info!("Using {} parsing threads.", &app_config.parsing_threads);
+    info!("Using DMM repo URL: {}", &app_config.dmm_repo_url);
+    info!("Using DMM local path: {}", &app_config.dmm_local_path);
 
     ThreadPoolBuilder::new()
-        .num_threads(app_config.parsing_threads.clone())
+        .num_threads(app_config.parsing_threads)
         .build_global()
         .expect("Rayon pool already initialized");
 

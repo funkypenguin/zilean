@@ -2,6 +2,7 @@
 mod grpc;
 mod imdb;
 mod configuration;
+mod dmm;
 use crate::configuration::config::{load_config};
 
 pub mod proto {
@@ -23,7 +24,7 @@ fn init_tracing() {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     init_tracing();
-    _ = load_config()?;
+    let app_config = load_config()?;
 
-    start_server().await
+    start_server(app_config).await
 }

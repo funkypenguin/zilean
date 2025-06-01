@@ -4,16 +4,24 @@ use tokio::sync::{mpsc, Notify, RwLock};
 use tokio_stream::Stream;
 use tokio_stream::wrappers::{UnboundedReceiverStream};
 use parsett_rust::{parse_batch};
+use sqlx::testing::TestTermination;
 use tonic::{Request, Response, Status};
+use crate::configuration::config::AppConfig;
+use crate::dmm::page_parser::DmmFileEntryProcessor;
+use crate::dmm::repo_manager::DmmRepoManager;
 use crate::grpc::mapping::{map_parsed_title, map_to_empty_on_error};
 use crate::imdb::{ImdbIngestor, ImdbSearcher};
 use crate::proto::zilean_rust_server_server::ZileanRustServer;
 use crate::proto::*;
 
+# [allow(unused)]
 pub struct SharedState {
     pub searcher: Arc<RwLock<ImdbSearcher>>,
     pub ingestor: Arc<ImdbIngestor>,
     pub shutdown_notify: Arc<Notify>,
+    pub app_config: Arc<AppConfig>,
+    pub dmm_repo_manager: Arc<DmmRepoManager>,
+    pub dmm_page_parser: Arc<DmmFileEntryProcessor>,
 }
 
 pub struct ZileanService {
@@ -36,6 +44,18 @@ impl ZileanRustServer for ZileanService {
 
         tracing::info!("Ingestion complete, indexed {} new documents", indexed);
         Ok(Response::new(IngestImdbResponse {}))
+    }
+
+    async fn ingest_dmm_pages(
+        &self,
+        _: Request<IngestDmmPagesRequest>,
+    ) -> Result<Response<IngestDmmPagesResponse>, Status> {
+        tracing::info!("Performing DMM ingestion and scrape...");
+        self.state.dmm_repo_manager.sync_repo().unwrap();
+        let result = self.state.dmm_page_parser.perform_scrape().await.unwrap();
+        Ok(Response::new(IngestDmmPagesResponse {
+            success: result.is_success(),
+        }))
     }
 
     async fn search_imdb(

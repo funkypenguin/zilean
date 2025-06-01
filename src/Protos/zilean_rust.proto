@@ -5,6 +5,7 @@ option csharp_namespace = "Zilean.Proto.RustServer";
 
 service ZileanRustServer {
   rpc IngestImdb (IngestImdbRequest) returns (IngestImdbResponse);
+  rpc IngestDmmPages (IngestDmmPagesRequest) returns (IngestDmmPagesResponse);
   rpc SearchImdb (SearchImdbRequest) returns (SearchImdbResponse);
   rpc ParseTorrentTitles (stream TorrentTitleRequest) returns (stream TorrentTitleResponse);
   rpc Shutdown (ShutdownRequest) returns (ShutdownResponse);
@@ -33,6 +34,14 @@ message IngestImdbRequest {
 }
 
 message IngestImdbResponse {}
+
+message IngestDmmPagesRequest {
+  bool force_download = 1;
+}
+
+message IngestDmmPagesResponse {
+  bool success = 1;
+}
 
 enum Codec {
   UNKNOWN = 0;
