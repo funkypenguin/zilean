@@ -1,9 +1,9 @@
 pub mod extensions;
 pub mod handler_wrapper;
 pub mod parser;
+pub mod parser_handlers;
 pub mod transforms;
 pub mod types;
-pub mod parser_handlers;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ParserError {
@@ -65,10 +65,9 @@ pub fn parse_title(raw_title: &str) -> Result<ParsedTitle, ParserError> {
 
 use rayon::prelude::*;
 
-pub fn parse_batch(
-    titles: Vec<&str>
-) -> Vec<Result<ParsedTitle, ParserError>> {
-    titles.par_iter()
+pub fn parse_batch(titles: Vec<&str>) -> Vec<Result<ParsedTitle, ParserError>> {
+    titles
+        .par_iter()
         .map(|title| {
             let parser = parser::Parser::default();
             parser.parse(title)

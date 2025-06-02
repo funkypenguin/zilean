@@ -4,7 +4,10 @@ use parsett_rust::parse_title;
 fn test_hardcoded_detection() {
     let test_cases = vec![
         ("Ghost In The Shell 2017 1080p HC HDRip X264 AC3-EVO", true),
-        ("Have I Got News For You S53E02 EXTENDED 720p HDTV x264-QPEL", false),
+        (
+            "Have I Got News For You S53E02 EXTENDED 720p HDTV x264-QPEL",
+            false,
+        ),
     ];
 
     for (input, expected_hardcoded) in test_cases {

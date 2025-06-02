@@ -1,11 +1,11 @@
 use regress::Regex;
 use std::cmp::min;
 
-use lazy_static::lazy_static;
 use crate::extensions::regex::RegexStringExt;
 use crate::handler_wrapper::{Handler, HandlerResult, Match, RegexHandlerOptions};
-use crate::{parser, transforms};
 use crate::types::{Codec, Language, Network, Quality};
+use crate::{parser, transforms};
+use lazy_static::lazy_static;
 
 fn load_embedded_adult_keywords() -> Vec<String> {
     include_str!("../adult_word_lists/combined.txt")
@@ -25,9 +25,9 @@ lazy_static! {
 }
 
 lazy_static! {
-        static ref VOLUME_REGEX: Regex =
-            Regex::case_insensitive(r"\bvol(?:ume)?[. -]*(\d{1,2})").unwrap();
-    }
+    static ref VOLUME_REGEX: Regex =
+        Regex::case_insensitive(r"\bvol(?:ume)?[. -]*(\d{1,2})").unwrap();
+}
 
 lazy_static! {
         static ref EPISODE_RE1: Regex = Regex::case_insensitive(
@@ -39,9 +39,9 @@ lazy_static! {
     }
 
 lazy_static! {
-        static ref PT_LANG_RE1: Regex = Regex::case_insensitive(r"capitulo|ao").unwrap();
-        static ref PT_LANG_RE2: Regex = Regex::case_insensitive(r"dublado").unwrap();
-    }
+    static ref PT_LANG_RE1: Regex = Regex::case_insensitive(r"capitulo|ao").unwrap();
+    static ref PT_LANG_RE2: Regex = Regex::case_insensitive(r"dublado").unwrap();
+}
 
 pub fn add_default_handlers(parser: &mut parser::Parser) {
     // Adult
@@ -337,7 +337,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"\b(?:4k|2160p|1080p|720p|480p)(?!.*\b(?:4k|2160p|1080p|720p|480p)\b)",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::resolution_transform,
         RegexHandlerOptions {
             remove: true,
@@ -381,7 +381,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"\b(?:H[DQ][ .-]*)?CAM(?!.?(S|E|\()\d+)(?:H[DQ])?(?:[ .-]*Rip|Rp)?\b",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::true_if_found,
         RegexHandlerOptions {
             remove: false,
@@ -668,7 +668,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"\b\d{2,3}(th)?[\.\s\-\+_\/(),]Anniversary[\.\s\-\+_\/(),](Edition|Ed)?\b",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::value("Anniversary Edition"),
         RegexHandlerOptions {
             remove: true,
@@ -1184,7 +1184,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"\b(?:H[DQ][ .-]*)?CAM(?!.?(S|E|\()\d+)(?:H[DQ])?(?:[ .-]*Rip|Rp)?\b",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::const_value(Quality::Cam),
         RegexHandlerOptions {
             remove: true,
@@ -1735,7 +1735,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"(?:\bthe\W)?(?:\bcomplete|collection|dvd)?\b[ .]?\bbox[ .-]?set\b",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::true_if_found,
         RegexHandlerOptions::default(),
     ));
@@ -1746,7 +1746,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"(?:\bthe\W)?(?:\bcomplete|collection|dvd)?\b[ .]?\bmini[ .-]?series\b",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::true_if_found,
         RegexHandlerOptions::default(),
     ));
@@ -1805,7 +1805,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"duology|trilogy|quadr[oi]logy|tetralogy|pentalogy|hexalogy|heptalogy|anthology",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::true_if_found,
         RegexHandlerOptions {
             skip_if_already_found: false,
@@ -1842,7 +1842,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"(?:complete\W|seasons?\W|\W|^)((?:s\d{1,2}[., +/\\&-]+)+s\d{1,2}\b)",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::range_func,
         RegexHandlerOptions {
             remove: true,
@@ -1989,7 +1989,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"(?:(?:\bthe\W)?\bcomplete\W)?(?:\W|^)(\d{1,2})[. ]?(?:st|nd|rd|th)[. ]*season",
         )
-            .unwrap(),
+        .unwrap(),
         |v, _| Some(vec![v.parse().ok()?]),
         RegexHandlerOptions::default(),
     ));
@@ -2048,7 +2048,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"(?<!\bEp?(?:isode)? ?\d+\b.*)\b(\d{2})[ ._]\d{2}(?:.F)?\.\w{2,4}$",
         )
-            .unwrap(),
+        .unwrap(),
         |v, _| Some(vec![v.parse().ok()?]),
         RegexHandlerOptions::default(),
     ));
@@ -2080,7 +2080,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"(?:[\W\d]|^)e[ .]?[([]?(\d{1,3}(?:[ .-]*(?:[&+]|e){1,2}[ .]?\d{1,3})+)(?:\W|$)",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::range_func,
         RegexHandlerOptions::default(),
     ));
@@ -2090,7 +2090,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"(?:[\W\d]|^)ep[ .]?[([]?(\d{1,3}(?:[ .-]*(?:[&+]|ep){1,2}[ .]?\d{1,3})+)(?:\W|$)",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::range_func,
         RegexHandlerOptions::default(),
     ));
@@ -2100,7 +2100,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"(?:[\W\d]|^)\d+[xх][ .]?[([]?(\d{1,3}(?:[ .]?[xх][ .]?\d{1,3})+)(?:\W|$)",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::range_func,
         RegexHandlerOptions::default(),
     ));
@@ -2132,7 +2132,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"[st]\d{1,2}[. ]?[xх-]?[. ]?(?:e|x|х|ep|-|\.)[. ]?(\d{1,4})(?:[abc]|v0?[1-4]|\D|$)",
         )
-            .unwrap(),
+        .unwrap(),
         |v, _| Some(vec![v.parse().ok()?]),
         RegexHandlerOptions {
             remove: true,
@@ -2202,7 +2202,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"(?<!(?:seasons?|[Сс]езони?)\W*)(?:[ .([-]|^)(\d{1,3}(?:-\d{1,3})+)(?:[ .)(\]]|-\D|$)",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::range_func,
         RegexHandlerOptions::default(),
     ));
@@ -2226,7 +2226,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"\b(\d{1,3})(?:-?я)?[ ._-]*(?:ser(?:i?[iyj]a|\b)|[Сс]ер(?:ии|ия|\.)?)",
         )
-            .unwrap(),
+        .unwrap(),
         |v, _| Some(vec![v.parse().ok()?]),
         RegexHandlerOptions::default(),
     ));
@@ -2330,9 +2330,9 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
                 context.matched.get("year").map(|m| m.match_index),
                 context.matched.get("seasons").map(|m| m.match_index),
             ]
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>();
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>();
 
             let end_indexes = [
                 context.matched.get("resolution").map(|m| m.match_index),
@@ -2341,18 +2341,30 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
                 context.matched.get("audio").map(|m| m.match_index),
                 Some(context.title.len()),
             ]
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>();
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>();
 
             let start_index = start_indexes.iter().min().copied().unwrap_or(0);
-            let end_index = end_indexes.iter().min().copied().unwrap_or(context.title.len());
+            let end_index = end_indexes
+                .iter()
+                .min()
+                .copied()
+                .unwrap_or(context.title.len());
             let start_index = min(start_index, end_index);
 
             // Ensure indices are at char boundaries
             let s = &context.title;
-            let safe_start = if s.is_char_boundary(start_index) { start_index } else { s.len() };
-            let safe_end = if s.is_char_boundary(end_index) { end_index } else { s.len() };
+            let safe_start = if s.is_char_boundary(start_index) {
+                start_index
+            } else {
+                s.len()
+            };
+            let safe_end = if s.is_char_boundary(end_index) {
+                end_index
+            } else {
+                s.len()
+            };
 
             let beginning_title = &s[..safe_end];
             let middle_title = &s[safe_start..safe_end];
@@ -2862,7 +2874,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"\b(?:leg(?:endado|endas?)?|dub(?:lado)?|portugu[eèê]se?)[. -]*BR\b",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::chain_transforms(
             transforms::replace_with_value(Language::Portuguese),
             transforms::uniq_concat,
@@ -3734,7 +3746,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"\b(norwegian|noruegu[eê]s|bokm[aå]l|nob|nor(?=[\]_)]?\.\w{2,4}$))\b",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::chain_transforms(
             transforms::replace_with_value(Language::Norwegian),
             transforms::uniq_concat,
@@ -4236,7 +4248,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"\b(?!.*\bsub(s|bed)?\b)([ _\-\[(\.])?(dual|multi)([ _\-\[(\.])?(audio)?\b",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::true_if_found,
         RegexHandlerOptions {
             remove: true,
@@ -4249,7 +4261,7 @@ pub fn add_default_handlers(parser: &mut parser::Parser) {
         Regex::case_insensitive(
             r"\b(JAP?(anese)?|ZH)\+ENG?(lish)?|ENG?(lish)?\+(JAP?(anese)?|ZH)\b",
         )
-            .unwrap(),
+        .unwrap(),
         transforms::true_if_found,
         RegexHandlerOptions {
             remove: true,

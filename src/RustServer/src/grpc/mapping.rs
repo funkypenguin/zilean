@@ -1,4 +1,4 @@
-use crate::proto;
+use crate::{proto, utils};
 use crate::proto::{TorrentInfo, TorrentTitleResponse};
 use parsett_rust::ParsedTitle;
 
@@ -114,7 +114,7 @@ pub fn map_torrent_info(
 
     let category = assign_category(adult, &seasons, &episodes);
     let parsed_title = title;
-    let normalized_title = parsed_title.to_lowercase();
+    let normalized_title = utils::strings::normalize_title(&parsed_title);
 
     TorrentInfo {
         raw_title: original_title.into(),

@@ -11,7 +11,12 @@ where
     fn contains_match(&self, subject: &str) -> bool;
 
     fn replace_all(&self, subject: &str, replacement: &str) -> String;
-    fn replace_all_with_captures(&self, subject: &str, replacement: &str, use_captures: bool) -> String;
+    fn replace_all_with_captures(
+        &self,
+        subject: &str,
+        replacement: &str,
+        use_captures: bool,
+    ) -> String;
 }
 
 impl RegexStringExt for Regex {
@@ -47,7 +52,12 @@ impl RegexStringExt for Regex {
         self.replace_all_with_captures(subject, replacement, false)
     }
 
-    fn replace_all_with_captures(&self, subject: &str, replacement: &str, use_captures: bool) -> String {
+    fn replace_all_with_captures(
+        &self,
+        subject: &str,
+        replacement: &str,
+        use_captures: bool,
+    ) -> String {
         let mut result = String::with_capacity(subject.len());
         let mut last_match_end = 0;
 
@@ -59,7 +69,11 @@ impl RegexStringExt for Regex {
                 while let Some(c) = chars.next() {
                     if c == '\\' {
                         if let Some(group_num) = chars.next().and_then(|d| d.to_digit(10)) {
-                            if let Some(group) = m.captures.get(group_num as usize - 1).and_then(|r| r.as_ref()) {
+                            if let Some(group) = m
+                                .captures
+                                .get(group_num as usize - 1)
+                                .and_then(|r| r.as_ref())
+                            {
                                 result.push_str(&subject[group.clone()]);
                             }
                         } else {

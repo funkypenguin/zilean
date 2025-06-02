@@ -3,15 +3,27 @@ use parsett_rust::{parse_title, types::Network};
 #[test]
 fn test_network_detection() {
     let test_cases = vec![
-        ("Nocturnal Animals 2016 VFF 1080p BluRay DTS HEVC-HD2", None, "Nocturnal Animals"),
-        ("doctor_who_2005.8x12.death_in_heaven.720p_hdtv_x264-fov", None, "doctor who"),
+        (
+            "Nocturnal Animals 2016 VFF 1080p BluRay DTS HEVC-HD2",
+            None,
+            "Nocturnal Animals",
+        ),
+        (
+            "doctor_who_2005.8x12.death_in_heaven.720p_hdtv_x264-fov",
+            None,
+            "doctor who",
+        ),
         (
             "The Vet Life S02E01 Dunk-A-Doctor 1080p ANPL WEB-DL AAC2 0 H 264-RTN",
             Some(Network::AnimalPlanet),
             "The Vet Life",
         ),
         ("Gotham S03E17 XviD-AFG", None, "Gotham"),
-        ("Jimmy Kimmel 2017 05 03 720p HDTV DD5 1 MPEG2-CTL", None, "Jimmy Kimmel"),
+        (
+            "Jimmy Kimmel 2017 05 03 720p HDTV DD5 1 MPEG2-CTL",
+            None,
+            "Jimmy Kimmel",
+        ),
         (
             "[Anime Time] Re Zero kara Hajimeru Isekai Seikatsu (Season 2 Part 1) [1080p][HEVC10bit x265][Multi Sub]",
             None,
@@ -56,7 +68,15 @@ fn test_network_detection() {
 
     for (release_name, expected_network, expected_title) in test_cases {
         let result = parse_title(release_name).unwrap();
-        assert_eq!(result.network, expected_network, "Failed network detection for {}", release_name);
-        assert_eq!(result.title, expected_title, "Failed title detection for {}", release_name);
+        assert_eq!(
+            result.network, expected_network,
+            "Failed network detection for {}",
+            release_name
+        );
+        assert_eq!(
+            result.title, expected_title,
+            "Failed title detection for {}",
+            release_name
+        );
     }
 }

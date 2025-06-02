@@ -11,16 +11,17 @@ use std::{
     time::Duration,
 };
 use std::collections::HashSet;
+use arc_swap::ArcSwap;
 use tantivy::TantivyDocument;
-use tokio::sync::RwLock;
 use tokio::{fs, io::AsyncWriteExt};
 use serde::Serialize;
 use sqlx::types::Json;
 use tracing::log::LevelFilter;
 use crate::proto::IngestImdbRequest;
+use crate::utils;
 
 pub struct ImdbIngestor {
-    searcher: Arc<RwLock<ImdbSearcher>>,
+    searcher: Arc<ArcSwap<ImdbSearcher>>,
 }
 
 #[derive(Serialize)]
@@ -50,7 +51,7 @@ const REQUIRED_CATEGORIES: &[&str] = &[
 ];
 
 impl ImdbIngestor {
-    pub fn new(searcher: Arc<RwLock<ImdbSearcher>>) -> Self {
+    pub fn new(searcher: Arc<ArcSwap<ImdbSearcher>>) -> Self {
         Self { searcher }
     }
 
@@ -114,8 +115,9 @@ impl ImdbIngestor {
         db_url: &String,
         request: &IngestImdbRequest,
         valid_cached_file: &bool) -> anyhow::Result<usize> {
-        let mut searcher = self.searcher.write().await;
-        searcher.drop_and_initialise_index()?;
+        let current = self.searcher.load();
+        let mut new_searcher = (*current).clone();
+        Arc::make_mut(&mut new_searcher).drop_and_initialise_index()?;
         tracing::info!("Re-initialised Tantivy index");
 
         if *valid_cached_file && !request.force_index {
@@ -140,7 +142,7 @@ impl ImdbIngestor {
         let mut copy_in = db_conn.copy_in_raw(copy_stmt).await?;
 
         let required_categories: HashSet<&str> = REQUIRED_CATEGORIES.iter().cloned().collect();
-        let mut index_writer = searcher.index.writer(300_000_000)?;
+        let mut index_writer = new_searcher.index.writer(300_000_000)?;
 
         for (i, line) in reader.lines().enumerate() {
             let line = line?;
@@ -164,10 +166,11 @@ impl ImdbIngestor {
 
             // Tantivy doc
             let mut doc = TantivyDocument::default();
-            doc.add_text(searcher.imdb_id, imdb_id);
-            doc.add_text(searcher.category, category);
-            doc.add_text(searcher.title, &title);
-            doc.add_i64(searcher.year, year as i64);
+            doc.add_text(new_searcher.imdb_id, imdb_id);
+            doc.add_text(new_searcher.category, category);
+            doc.add_text(new_searcher.title, &title);
+            doc.add_i64(new_searcher.year, year as i64);
+            doc.add_text(new_searcher.normalized_title, utils::strings::normalize_title(&title));
             index_writer.add_document(doc)?;
 
             // COPY line
@@ -183,6 +186,7 @@ impl ImdbIngestor {
         // Finalize
         tracing::info!("Committing Index...");
         index_writer.commit()?;
+        self.searcher.store(new_searcher.clone());
 
         tracing::info!("Committing Postgres COPY ...");
         copy_in.finish().await?;

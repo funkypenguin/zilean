@@ -24,7 +24,10 @@ fn test_edition_detection() {
             "The Fifth Element 1997 REMASTERED MULTi 1080p BluRay HDLight AC3 x264 Zone80",
             Some("Remastered"),
         ),
-        ("Predator 1987 REMASTER MULTi 1080p BluRay x264 FiDELiO", Some("Remastered")),
+        (
+            "Predator 1987 REMASTER MULTi 1080p BluRay x264 FiDELiO",
+            Some("Remastered"),
+        ),
         (
             "Have I Got News For You S53E02 EXTENDED 720p HDTV x264-QPEL",
             Some("Extended Edition"),

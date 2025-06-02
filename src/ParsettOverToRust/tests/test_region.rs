@@ -3,8 +3,16 @@ use parsett_rust::parse_title;
 #[test]
 fn test_region_detection() {
     let test_cases = vec![
-        ("Welcome to New York 2014 R5 XviD AC3-SUPERFAST", Some("R5"), true),
-        ("[Coalgirls]_Code_Geass_R2_06_(1920x1080_Blu-ray_FLAC)_[F8C7FE25].mkv", None, false),
+        (
+            "Welcome to New York 2014 R5 XviD AC3-SUPERFAST",
+            Some("R5"),
+            true,
+        ),
+        (
+            "[Coalgirls]_Code_Geass_R2_06_(1920x1080_Blu-ray_FLAC)_[F8C7FE25].mkv",
+            None,
+            false,
+        ),
     ];
 
     for (release_name, expected_region, should_have_region) in test_cases {
@@ -18,7 +26,11 @@ fn test_region_detection() {
                 release_name
             );
         } else {
-            assert!(result.region.is_none(), "Region should not be detected in {}", release_name);
+            assert!(
+                result.region.is_none(),
+                "Region should not be detected in {}",
+                release_name
+            );
         }
     }
 }

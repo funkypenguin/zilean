@@ -1,10 +1,10 @@
+use super::ParsedTitle;
+use super::ParserError;
 use super::extensions::regex::RegexStringExt as _;
 use super::handler_wrapper::Handler;
 use super::handler_wrapper::HandlerContext;
 use super::handler_wrapper::Match;
-use super::{parser_handlers};
-use super::ParsedTitle;
-use super::ParserError;
+use super::parser_handlers;
 use lazy_static::lazy_static;
 
 use regress::Regex;
@@ -34,7 +34,8 @@ const NON_ENGLISH_CHARS: &str = concat!(
 lazy_static! {
     static ref CLEAN_TITLE_REGEX: Regex = Regex::new(r"_+").unwrap();
     static ref MOVIE_REGEX: Regex = Regex::case_insensitive(r"[[(]movie[)\]]").unwrap();
-    static ref RUSSIAN_CAST_REGEX: Regex = Regex::new(&r"\([^)]*[\u0400-\u04ff][^)]*\)$|(?<=\/.*)\(.*\)$".to_string()).unwrap();
+    static ref RUSSIAN_CAST_REGEX: Regex =
+        Regex::new(&r"\([^)]*[\u0400-\u04ff][^)]*\)$|(?<=\/.*)\(.*\)$".to_string()).unwrap();
     static ref ALT_TITLES_REGEX: Regex = Regex::new(&format!(
         r"[^/|(]*[{}][^/|]*[/|]|[/|][^/|(]*[{}][^/|]*",
         NON_ENGLISH_CHARS, NON_ENGLISH_CHARS
@@ -42,12 +43,21 @@ lazy_static! {
     .unwrap();
     static ref NOT_ONLY_NON_ENGLISH_REGEX: Regex = Regex::new(&format!(
         r"(?<=[a-zA-Z][^{}]+)[{}].*[{}]|[{}].*[{}](?=[^{}]+[a-zA-Z])",
-        NON_ENGLISH_CHARS, NON_ENGLISH_CHARS, NON_ENGLISH_CHARS, NON_ENGLISH_CHARS, NON_ENGLISH_CHARS, NON_ENGLISH_CHARS
+        NON_ENGLISH_CHARS,
+        NON_ENGLISH_CHARS,
+        NON_ENGLISH_CHARS,
+        NON_ENGLISH_CHARS,
+        NON_ENGLISH_CHARS,
+        NON_ENGLISH_CHARS
     ))
     .unwrap();
-    static ref NOT_ALLOWED_SYMBOLS_AT_START_AND_END: Regex =
-        Regex::new(&format!(r"^[^\w{}#[【★]+|[ \-:/\\[|{{(#$&^]+$", NON_ENGLISH_CHARS)).unwrap();
-    static ref REMAINING_NOT_ALLOWED_SYMBOLS_AT_START_AND_END: Regex = Regex::new(&format!(r"^[^\w{}#]+|]$", NON_ENGLISH_CHARS)).unwrap();
+    static ref NOT_ALLOWED_SYMBOLS_AT_START_AND_END: Regex = Regex::new(&format!(
+        r"^[^\w{}#[【★]+|[ \-:/\\[|{{(#$&^]+$",
+        NON_ENGLISH_CHARS
+    ))
+    .unwrap();
+    static ref REMAINING_NOT_ALLOWED_SYMBOLS_AT_START_AND_END: Regex =
+        Regex::new(&format!(r"^[^\w{}#]+|]$", NON_ENGLISH_CHARS)).unwrap();
     static ref REDUNDANT_SYMBOLS_AT_END: Regex = Regex::new(r"[ \-:./\\]+$").unwrap();
     static ref EMPTY_BRACKETS_REGEX: Regex = Regex::new(r"\(\s*\)|\[\s*\]|\{\s*\}").unwrap();
     static ref PARANTHESES_WITHOUT_CONTENT: Regex = Regex::new(r"\(\W*\)|\[\W*\]|\{\W*\}").unwrap();
@@ -66,7 +76,9 @@ pub struct Parser {
 
 impl Parser {
     pub fn new() -> Self {
-        Parser { handlers: Vec::new() }
+        Parser {
+            handlers: Vec::new(),
+        }
     }
 
     pub fn default() -> &'static Parser {
@@ -85,16 +97,24 @@ impl Parser {
         let mut cleaned = title.to_string();
         cleaned = cleaned.replace("_", " ");
         cleaned = MOVIE_REGEX.replace_all(&cleaned, "").to_string();
-        cleaned = NOT_ALLOWED_SYMBOLS_AT_START_AND_END.replace_all(&cleaned, "").to_string();
+        cleaned = NOT_ALLOWED_SYMBOLS_AT_START_AND_END
+            .replace_all(&cleaned, "")
+            .to_string();
         cleaned = RUSSIAN_CAST_REGEX.replace_all(&cleaned, "").to_string();
         cleaned = STAR_REGEX_1.replace_all_with_captures(&cleaned, r"\1", true);
         cleaned = STAR_REGEX_2.replace_all_with_captures(&cleaned, r"\1", true);
         cleaned = ALT_TITLES_REGEX.replace_all(&cleaned, "").to_string();
-        cleaned = NOT_ONLY_NON_ENGLISH_REGEX.replace_all(&cleaned, "").to_string();
-        cleaned = REMAINING_NOT_ALLOWED_SYMBOLS_AT_START_AND_END.replace_all(&cleaned, "").to_string();
+        cleaned = NOT_ONLY_NON_ENGLISH_REGEX
+            .replace_all(&cleaned, "")
+            .to_string();
+        cleaned = REMAINING_NOT_ALLOWED_SYMBOLS_AT_START_AND_END
+            .replace_all(&cleaned, "")
+            .to_string();
         cleaned = EMPTY_BRACKETS_REGEX.replace_all(&cleaned, "").to_string();
         cleaned = MP3_REGEX.replace_all(&cleaned, "").to_string();
-        cleaned = PARANTHESES_WITHOUT_CONTENT.replace_all(&cleaned, "").to_string();
+        cleaned = PARANTHESES_WITHOUT_CONTENT
+            .replace_all(&cleaned, "")
+            .to_string();
 
         for (open_bracket, close_bracket) in BRACKETS {
             if cleaned.matches(open_bracket).count() != cleaned.matches(close_bracket).count() {
@@ -106,7 +126,9 @@ impl Parser {
             cleaned = DOT_REGEX.replace_all(&cleaned, " ").to_string();
         }
 
-        cleaned = REDUNDANT_SYMBOLS_AT_END.replace_all(&cleaned, "").to_string();
+        cleaned = REDUNDANT_SYMBOLS_AT_END
+            .replace_all(&cleaned, "")
+            .to_string();
         cleaned = SPACING_REGEX.replace_all(&cleaned, " ").to_string();
         cleaned = cleaned.trim().to_string();
         cleaned
@@ -129,7 +151,11 @@ impl Parser {
             });
 
             #[cfg(feature = "debug")]
-            println!("match result for {}: {:?}", handler.get_name(), match_result);
+            println!(
+                "match result for {}: {:?}",
+                handler.get_name(),
+                match_result
+            );
             #[cfg(feature = "debug")]
             println!("title: {}", title);
 
@@ -144,14 +170,20 @@ impl Parser {
                     &title[match_result.match_index + match_result.raw_match.len()..]
                 );
             }
-            if !match_result.skip_from_title && 1 < match_result.match_index && match_result.match_index < end_of_title {
+            if !match_result.skip_from_title
+                && 1 < match_result.match_index
+                && match_result.match_index < end_of_title
+            {
                 end_of_title = match_result.match_index;
             }
-            if match_result.remove && match_result.skip_from_title && match_result.match_index < end_of_title {
+            if match_result.remove
+                && match_result.skip_from_title
+                && match_result.match_index < end_of_title
+            {
                 end_of_title -= match_result.raw_match.len();
             }
         }
-        
+
         end_of_title = end_of_title.min(title.len());
         let title = title[..end_of_title].to_string();
         result.title = self.clean_title(&title);

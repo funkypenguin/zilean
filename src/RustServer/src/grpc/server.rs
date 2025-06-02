@@ -1,17 +1,18 @@
-use std::path::Path;
-use std::sync::Arc;
-use tokio::net::UnixListener;
-use tokio::sync::Notify;
-use tokio_stream::wrappers::UnixListenerStream;
-use tonic::transport::Server;
 use crate::configuration::config::AppConfig;
-use crate::dmm::dmm_service::PgDmmService;
+use crate::dmm::db_service::PgDmmDbService;
 use crate::dmm::page_parser::DmmFileEntryProcessor;
 use crate::dmm::repo_manager::DmmRepoManager;
 use crate::grpc::constants;
 use crate::grpc::handler::{SharedState, ZileanService};
 use crate::imdb::{ImdbIngestor, ImdbSearcher};
 use crate::proto::zilean_rust_server_server::ZileanRustServerServer;
+use std::path::Path;
+use std::sync::Arc;
+use arc_swap::ArcSwap;
+use tokio::net::UnixListener;
+use tokio::sync::Notify;
+use tokio_stream::wrappers::UnixListenerStream;
+use tonic::transport::Server;
 
 const DESCRIPTOR_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/descriptor.bin"));
 
@@ -37,7 +38,10 @@ pub async fn start_server(app_config: AppConfig) -> anyhow::Result<()> {
 
     let service = ZileanService { state };
 
-    tracing::info!("Zilean gRPC server listening on unix://{}", constants::ZILEAN_SOCKET_PATH);
+    tracing::info!(
+        "Zilean gRPC server listening on unix://{}",
+        constants::ZILEAN_SOCKET_PATH
+    );
 
     Server::builder()
         .max_frame_size(10 * 1024 * 1024)
@@ -53,20 +57,32 @@ pub async fn start_server(app_config: AppConfig) -> anyhow::Result<()> {
 
 async fn construct_state(app_config: AppConfig, shutdown_notify: Arc<Notify>) -> Arc<SharedState> {
     let app_config = Arc::new(app_config);
-    let searcher = Arc::new(tokio::sync::RwLock::new(ImdbSearcher::new().expect("Failed to initialize ImdbSearcher")));
+
+    let searcher = Arc::new(ArcSwap::new(Arc::new(
+        ImdbSearcher::new(app_config.imdb_minimum_score)
+            .expect("Failed to initialize ImdbSearcher"),
+    )));
+
     let ingestor = Arc::new(ImdbIngestor::new(searcher.clone()));
+
     let shutdown_notify = shutdown_notify;
+
     let dmm_repo_manager = Arc::new(DmmRepoManager::new(
         &app_config.dmm_repo_url,
-        &app_config.dmm_local_path
+        &app_config.dmm_local_path,
     ));
 
-    let dmm_service = Arc::new(PgDmmService::connect(&app_config.database_url).await.unwrap());
+    let dmm_service = Arc::new(
+        PgDmmDbService::connect(&app_config.database_url)
+            .await
+            .unwrap(),
+    );
 
     let dmm_page_parser = Arc::new(DmmFileEntryProcessor::new(
         dmm_service,
         searcher.clone(),
-        app_config.dmm_local_path.clone()));
+        app_config.dmm_local_path.clone(),
+    ));
 
     Arc::new(SharedState {
         searcher,
@@ -74,6 +90,6 @@ async fn construct_state(app_config: AppConfig, shutdown_notify: Arc<Notify>) ->
         dmm_repo_manager,
         dmm_page_parser,
         shutdown_notify: shutdown_notify.clone(),
-        app_config
+        app_config,
     })
 }

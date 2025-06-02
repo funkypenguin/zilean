@@ -3,15 +3,27 @@ use parsett_rust::{parse_title, types::Codec};
 #[test]
 fn test_codec_detection() {
     let test_cases = vec![
-        ("Nocturnal Animals 2016 VFF 1080p BluRay DTS HEVC-HD2", Some(Codec::Hevc), None),
-        ("doctor_who_2005.8x12.death_in_heaven.720p_hdtv_x264-fov", Some(Codec::Avc), None),
+        (
+            "Nocturnal Animals 2016 VFF 1080p BluRay DTS HEVC-HD2",
+            Some(Codec::Hevc),
+            None,
+        ),
+        (
+            "doctor_who_2005.8x12.death_in_heaven.720p_hdtv_x264-fov",
+            Some(Codec::Avc),
+            None,
+        ),
         (
             "The Vet Life S02E01 Dunk-A-Doctor 1080p ANPL WEB-DL AAC2 0 H 264-RTN",
             Some(Codec::Avc),
             None,
         ),
         ("Gotham S03E17 XviD-AFG", Some(Codec::Xvid), None),
-        ("Jimmy Kimmel 2017 05 03 720p HDTV DD5 1 MPEG2-CTL", Some(Codec::Mpeg), None),
+        (
+            "Jimmy Kimmel 2017 05 03 720p HDTV DD5 1 MPEG2-CTL",
+            Some(Codec::Mpeg),
+            None,
+        ),
         (
             "[Anime Time] Re Zero kara Hajimeru Isekai Seikatsu (Season 2 Part 1) [1080p][HEVC10bit x265][Multi Sub]",
             Some(Codec::Hevc),
@@ -54,7 +66,12 @@ fn test_codec_detection() {
                     );
                 }
             }
-            None => assert!(result.codec.is_none(), "Unexpected codec found: {:?} in {}", result.codec, input),
+            None => assert!(
+                result.codec.is_none(),
+                "Unexpected codec found: {:?} in {}",
+                result.codec,
+                input
+            ),
         }
     }
 }

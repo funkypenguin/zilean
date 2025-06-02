@@ -1,4 +1,6 @@
-use parsett_rust::{parse_title, types::Codec, types::Language, types::Network, ParsedTitle, types::Quality};
+use parsett_rust::{
+    ParsedTitle, parse_title, types::Codec, types::Language, types::Network, types::Quality,
+};
 
 #[test]
 fn test_main_parsing() {
@@ -16,34 +18,25 @@ fn test_main_parsing() {
                 ..Default::default()
             },
         ),
-        (
-            "Color.Of.Night.Unrated.DC.VostFR.BRrip.x264",
-            ParsedTitle {
-                title: "Color Of Night".to_string(),
-                unrated: true,
-                languages: vec![Language::French],
-                quality: Some(Quality::BRRip),
-                codec: Some(Codec::Avc),
-                ..Default::default()
-            },
-        ),
-        (
-            "Da Vinci Code DVDRip",
-            ParsedTitle {
-                title: "Da Vinci Code".to_string(),
-                quality: Some(Quality::DVDRip),
-                ..Default::default()
-            },
-        ),
-        (
-            "Some.girls.1998.DVDRip",
-            ParsedTitle {
-                title: "Some girls".to_string(),
-                quality: Some(Quality::DVDRip),
-                year: Some(1998),
-                ..Default::default()
-            },
-        ),
+        ("Color.Of.Night.Unrated.DC.VostFR.BRrip.x264", ParsedTitle {
+            title: "Color Of Night".to_string(),
+            unrated: true,
+            languages: vec![Language::French],
+            quality: Some(Quality::BRRip),
+            codec: Some(Codec::Avc),
+            ..Default::default()
+        }),
+        ("Da Vinci Code DVDRip", ParsedTitle {
+            title: "Da Vinci Code".to_string(),
+            quality: Some(Quality::DVDRip),
+            ..Default::default()
+        }),
+        ("Some.girls.1998.DVDRip", ParsedTitle {
+            title: "Some girls".to_string(),
+            quality: Some(Quality::DVDRip),
+            year: Some(1998),
+            ..Default::default()
+        }),
         (
             "Ecrit.Dans.Le.Ciel.1954.MULTI.DVDRIP.x264.AC3-gismo65",
             ParsedTitle {
@@ -83,30 +76,24 @@ fn test_main_parsing() {
                 ..Default::default()
             },
         ),
-        (
-            "Rogue One 2016 1080p BluRay x264-SPARKS",
-            ParsedTitle {
-                title: "Rogue One".to_string(),
-                quality: Some(Quality::BluRay),
-                year: Some(2016),
-                resolution: Some("1080p".to_string()),
-                codec: Some(Codec::Avc),
-                group: Some("SPARKS".to_string()),
-                ..Default::default()
-            },
-        ),
-        (
-            "Desperation 2006 Multi Pal DvdR9-TBW1973",
-            ParsedTitle {
-                title: "Desperation".to_string(),
-                quality: Some(Quality::DVD),
-                year: Some(2006),
-                dubbed: true,
-                region: Some("R9".to_string()),
-                group: Some("TBW1973".to_string()),
-                ..Default::default()
-            },
-        ),
+        ("Rogue One 2016 1080p BluRay x264-SPARKS", ParsedTitle {
+            title: "Rogue One".to_string(),
+            quality: Some(Quality::BluRay),
+            year: Some(2016),
+            resolution: Some("1080p".to_string()),
+            codec: Some(Codec::Avc),
+            group: Some("SPARKS".to_string()),
+            ..Default::default()
+        }),
+        ("Desperation 2006 Multi Pal DvdR9-TBW1973", ParsedTitle {
+            title: "Desperation".to_string(),
+            quality: Some(Quality::DVD),
+            year: Some(2006),
+            dubbed: true,
+            region: Some("R9".to_string()),
+            group: Some("TBW1973".to_string()),
+            ..Default::default()
+        }),
         (
             "Maman, j'ai raté l'avion 1990 VFI 1080p BluRay DTS x265-HTG",
             ParsedTitle {
@@ -161,19 +148,16 @@ fn test_main_parsing() {
                 ..Default::default()
             },
         ),
-        (
-            "You.[Uncut].S01.SweSub.1080p.x264-Justiso",
-            ParsedTitle {
-                title: "You".to_string(),
-                edition: Some("Uncut".to_string()),
-                seasons: vec![1],
-                languages: vec![Language::Swedish],
-                resolution: Some("1080p".to_string()),
-                codec: Some(Codec::Avc),
-                group: Some("Justiso".to_string()),
-                ..Default::default()
-            },
-        ),
+        ("You.[Uncut].S01.SweSub.1080p.x264-Justiso", ParsedTitle {
+            title: "You".to_string(),
+            edition: Some("Uncut".to_string()),
+            seasons: vec![1],
+            languages: vec![Language::Swedish],
+            resolution: Some("1080p".to_string()),
+            codec: Some(Codec::Avc),
+            group: Some("Justiso".to_string()),
+            ..Default::default()
+        }),
         (
             "Stephen Colbert 2019 10 25 Eddie Murphy 480p x264-mSD [eztv]",
             ParsedTitle {
@@ -184,25 +168,19 @@ fn test_main_parsing() {
                 ..Default::default()
             },
         ),
-        (
-            "House MD Season 7 Complete MKV",
-            ParsedTitle {
-                title: "House MD".to_string(),
-                seasons: vec![7],
-                container: Some("mkv".to_string()),
-                ..Default::default()
-            },
-        ),
-        (
-            "2008 The Incredible Hulk Feature Film.mp4",
-            ParsedTitle {
-                title: "The Incredible Hulk Feature Film".to_string(),
-                year: Some(2008),
-                container: Some("mp4".to_string()),
-                extension: Some("mp4".to_string()),
-                ..Default::default()
-            },
-        ),
+        ("House MD Season 7 Complete MKV", ParsedTitle {
+            title: "House MD".to_string(),
+            seasons: vec![7],
+            container: Some("mkv".to_string()),
+            ..Default::default()
+        }),
+        ("2008 The Incredible Hulk Feature Film.mp4", ParsedTitle {
+            title: "The Incredible Hulk Feature Film".to_string(),
+            year: Some(2008),
+            container: Some("mp4".to_string()),
+            extension: Some("mp4".to_string()),
+            ..Default::default()
+        }),
         (
             "【4月/悠哈璃羽字幕社】[UHA-WINGS][不要输！恶之军团][Makeruna!! Aku no Gundan!][04][1080p AVC_AAC][简繁外挂][sc_tc]",
             ParsedTitle {
@@ -306,25 +284,19 @@ fn test_main_parsing() {
                 ..Default::default()
             },
         ),
-        (
-            "[720p] The God of Highschool Season 1",
-            ParsedTitle {
-                title: "The God of Highschool".to_string(),
-                seasons: vec![1],
-                resolution: Some("720p".to_string()),
-                ..Default::default()
-            },
-        ),
-        (
-            "Heidi Audio Latino DVDRip [cap. 3 Al 18]",
-            ParsedTitle {
-                title: "Heidi".to_string(),
-                episodes: vec![3],
-                quality: Some(Quality::DVDRip),
-                languages: vec![Language::LatinAmericanSpanish],
-                ..Default::default()
-            },
-        ),
+        ("[720p] The God of Highschool Season 1", ParsedTitle {
+            title: "The God of Highschool".to_string(),
+            seasons: vec![1],
+            resolution: Some("720p".to_string()),
+            ..Default::default()
+        }),
+        ("Heidi Audio Latino DVDRip [cap. 3 Al 18]", ParsedTitle {
+            title: "Heidi".to_string(),
+            episodes: vec![3],
+            quality: Some(Quality::DVDRip),
+            languages: vec![Language::LatinAmericanSpanish],
+            ..Default::default()
+        }),
         (
             "Anatomia De Grey - Temporada 19 [HDTV][Castellano][www.AtomoHD.nu].avi",
             ParsedTitle {
@@ -411,18 +383,15 @@ fn test_main_parsing() {
                 ..Default::default()
             },
         ),
-        (
-            "[DB]_Bleach_264_[012073FE].avi",
-            ParsedTitle {
-                title: "Bleach".to_string(),
-                container: Some("avi".to_string()),
-                extension: Some("avi".to_string()),
-                episode_code: Some("012073FE".to_string()),
-                episodes: vec![264],
-                group: Some("DB".to_string()),
-                ..Default::default()
-            },
-        ),
+        ("[DB]_Bleach_264_[012073FE].avi", ParsedTitle {
+            title: "Bleach".to_string(),
+            container: Some("avi".to_string()),
+            extension: Some("avi".to_string()),
+            episode_code: Some("012073FE".to_string()),
+            episodes: vec![264],
+            group: Some("DB".to_string()),
+            ..Default::default()
+        }),
         (
             "[SubsPlease] One Piece - 1111 (480p) [2E05E658].mkv",
             ParsedTitle {
@@ -515,7 +484,11 @@ fn test_main_parsing() {
                 container: Some("mkv".to_string()),
                 extension: Some("mkv".to_string()),
                 bitrate: Some("384kbps".to_string()),
-                audio: vec!["TrueHD".to_string(), "Dolby Digital Plus".to_string(), "AAC".to_string()],
+                audio: vec![
+                    "TrueHD".to_string(),
+                    "Dolby Digital Plus".to_string(),
+                    "AAC".to_string(),
+                ],
                 channels: vec!["5.1".to_string()],
                 ..Default::default()
             },
@@ -620,20 +593,17 @@ fn test_main_parsing() {
                 ..Default::default()
             },
         ),
-        (
-            "28.days.2000.1080p.bluray.x264-mimic.mkv",
-            ParsedTitle {
-                title: "28 days".to_string(),
-                year: Some(2000),
-                resolution: Some("1080p".to_string()),
-                quality: Some(Quality::BluRay),
-                codec: Some(Codec::Avc),
-                container: Some("mkv".to_string()),
-                extension: Some("mkv".to_string()),
-                group: Some("mimic".to_string()),
-                ..Default::default()
-            },
-        ),
+        ("28.days.2000.1080p.bluray.x264-mimic.mkv", ParsedTitle {
+            title: "28 days".to_string(),
+            year: Some(2000),
+            resolution: Some("1080p".to_string()),
+            quality: Some(Quality::BluRay),
+            codec: Some(Codec::Avc),
+            container: Some("mkv".to_string()),
+            extension: Some("mkv".to_string()),
+            group: Some("mimic".to_string()),
+            ..Default::default()
+        }),
         (
             "4.20.Massacre.2018.1080p.BluRay.x264.AAC-[YTS.MX].mp4",
             ParsedTitle {
@@ -649,41 +619,32 @@ fn test_main_parsing() {
                 ..Default::default()
             },
         ),
-        (
-            "inside.out.2.2024.d.ru.ua.ts.1o8op.mkv",
-            ParsedTitle {
-                title: "inside out 2".to_string(),
-                year: Some(2024),
-                quality: Some(Quality::TeleSync),
-                container: Some("mkv".to_string()),
-                extension: Some("mkv".to_string()),
-                languages: vec![Language::Russian],
-                trash: true,
-                ..Default::default()
-            },
-        ),
-        (
-            "I.S.S.2023.P.WEB-DL.1O8Op.mkv",
-            ParsedTitle {
-                title: "I S S".to_string(),
-                year: Some(2023),
-                quality: Some(Quality::WebDL),
-                container: Some("mkv".to_string()),
-                extension: Some("mkv".to_string()),
-                ..Default::default()
-            },
-        ),
-        (
-            "Skazka.2022.Pa.WEB-DL.1O8Op.mkv",
-            ParsedTitle {
-                title: "Skazka".to_string(),
-                year: Some(2022),
-                quality: Some(Quality::WebDL),
-                container: Some("mkv".to_string()),
-                extension: Some("mkv".to_string()),
-                ..Default::default()
-            },
-        ),
+        ("inside.out.2.2024.d.ru.ua.ts.1o8op.mkv", ParsedTitle {
+            title: "inside out 2".to_string(),
+            year: Some(2024),
+            quality: Some(Quality::TeleSync),
+            container: Some("mkv".to_string()),
+            extension: Some("mkv".to_string()),
+            languages: vec![Language::Russian],
+            trash: true,
+            ..Default::default()
+        }),
+        ("I.S.S.2023.P.WEB-DL.1O8Op.mkv", ParsedTitle {
+            title: "I S S".to_string(),
+            year: Some(2023),
+            quality: Some(Quality::WebDL),
+            container: Some("mkv".to_string()),
+            extension: Some("mkv".to_string()),
+            ..Default::default()
+        }),
+        ("Skazka.2022.Pa.WEB-DL.1O8Op.mkv", ParsedTitle {
+            title: "Skazka".to_string(),
+            year: Some(2022),
+            quality: Some(Quality::WebDL),
+            container: Some("mkv".to_string()),
+            extension: Some("mkv".to_string()),
+            ..Default::default()
+        }),
         (
             "Spider-Man.Across.the.Spider-Verse.2023.Dt.WEBRip.1O8Op.mkv",
             ParsedTitle {
@@ -695,17 +656,14 @@ fn test_main_parsing() {
                 ..Default::default()
             },
         ),
-        (
-            "Civil.War.2024.D.WEB-DL.1O8Op.mkv",
-            ParsedTitle {
-                title: "Civil War".to_string(),
-                year: Some(2024),
-                quality: Some(Quality::WebDL),
-                container: Some("mkv".to_string()),
-                extension: Some("mkv".to_string()),
-                ..Default::default()
-            },
-        ),
+        ("Civil.War.2024.D.WEB-DL.1O8Op.mkv", ParsedTitle {
+            title: "Civil War".to_string(),
+            year: Some(2024),
+            quality: Some(Quality::WebDL),
+            container: Some("mkv".to_string()),
+            extension: Some("mkv".to_string()),
+            ..Default::default()
+        }),
         (
             "Dune.Part.Two.2024.2160p.WEB-DL.DDP5.1.Atmos.DV.HDR.H.265-FLUX[TGx]",
             ParsedTitle {
@@ -865,25 +823,28 @@ fn test_main_parsing() {
                 ..Default::default()
             },
         ),
-        (
-            "Wentworth.S08E06.PDTV.AAC2.0.x264-BTN",
-            ParsedTitle {
-                title: "Wentworth".to_string(),
-                seasons: vec![8],
-                episodes: vec![6],
-                quality: Some(Quality::PDTV),
-                codec: Some(Codec::Avc),
-                audio: vec!["AAC".to_string()],
-                group: Some("BTN".to_string()),
-                ..Default::default()
-            },
-        ),
+        ("Wentworth.S08E06.PDTV.AAC2.0.x264-BTN", ParsedTitle {
+            title: "Wentworth".to_string(),
+            seasons: vec![8],
+            episodes: vec![6],
+            quality: Some(Quality::PDTV),
+            codec: Some(Codec::Avc),
+            audio: vec!["AAC".to_string()],
+            group: Some("BTN".to_string()),
+            ..Default::default()
+        }),
         (
             "www.1Tamilblasters.co - Guardians of the Galaxy Vol. 3 (2023) [4K IMAX UHD HEVC - BDRip - [Tam + Mal + Tel + Hin + Eng] - x264 - DDP5.1 (192Kbps) - 8.3GB - ESub].mkv",
             ParsedTitle {
                 title: "Guardians of the Galaxy Vol. 3".to_string(),
                 year: Some(2023),
-                languages: vec![Language::English, Language::Hindi, Language::Telugu, Language::Tamil, Language::Malayalam],
+                languages: vec![
+                    Language::English,
+                    Language::Hindi,
+                    Language::Telugu,
+                    Language::Tamil,
+                    Language::Malayalam,
+                ],
                 quality: Some(Quality::BDRip),
                 codec: Some(Codec::Hevc),
                 audio: vec!["Dolby Digital Plus".to_string()],
@@ -983,7 +944,12 @@ fn test_main_parsing() {
             ParsedTitle {
                 title: "Shang-Chi".to_string(),
                 year: Some(2021),
-                languages: vec![Language::English, Language::Hindi, Language::Telugu, Language::Tamil],
+                languages: vec![
+                    Language::English,
+                    Language::Hindi,
+                    Language::Telugu,
+                    Language::Tamil,
+                ],
                 quality: Some(Quality::BDRip),
                 resolution: Some("720p".to_string()),
                 codec: Some(Codec::Avc),
@@ -1082,21 +1048,18 @@ fn test_main_parsing() {
                 ..Default::default()
             },
         ),
-        (
-            "True.Grit.1969.720p.WEB.x265-MiNX[eztv].mkv",
-            ParsedTitle {
-                title: "True Grit".to_string(),
-                year: Some(1969),
-                resolution: Some("720p".to_string()),
-                scene: true,
-                quality: Some(Quality::Web),
-                codec: Some(Codec::Hevc),
-                group: Some("MiNX".to_string()),
-                extension: Some("mkv".to_string()),
-                container: Some("mkv".to_string()),
-                ..Default::default()
-            },
-        ),
+        ("True.Grit.1969.720p.WEB.x265-MiNX[eztv].mkv", ParsedTitle {
+            title: "True Grit".to_string(),
+            year: Some(1969),
+            resolution: Some("720p".to_string()),
+            scene: true,
+            quality: Some(Quality::Web),
+            codec: Some(Codec::Hevc),
+            group: Some("MiNX".to_string()),
+            extension: Some("mkv".to_string()),
+            container: Some("mkv".to_string()),
+            ..Default::default()
+        }),
         (
             "Free Samples (2012) [BluRay] [1080p] [YTS.AM]",
             ParsedTitle {
@@ -1246,7 +1209,7 @@ fn test_main_parsing() {
                 hdr: vec!["DV".to_string(), "HDR".to_string()],
                 ..Default::default()
             },
-        )
+        ),
     ];
 
     for (release_name, expected_output) in test_cases {

@@ -1,4 +1,4 @@
-use parsett_rust::{parse_title, types::Codec, ParsedTitle, types::Quality};
+use parsett_rust::{ParsedTitle, parse_title, types::Codec, types::Quality};
 
 #[test]
 fn test_random_sports_parse() {

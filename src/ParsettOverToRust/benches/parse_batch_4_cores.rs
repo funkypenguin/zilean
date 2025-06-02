@@ -1,8 +1,8 @@
+use criterion::{Criterion, criterion_group, criterion_main};
+use parsett_rust::parse_batch;
+use rayon::ThreadPoolBuilder;
 use std::hint::black_box;
 use std::time::Duration;
-use criterion::{Criterion, criterion_group, criterion_main};
-use rayon::ThreadPoolBuilder;
-use parsett_rust::parse_batch;
 
 fn bench_parse_batch(c: &mut Criterion) {
     ThreadPoolBuilder::new()

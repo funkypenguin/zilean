@@ -12,13 +12,22 @@ fn test_hdr_detection() {
             "Bullet.Train.2022.2160p.AMZN.WEB-DL.x265.10bit.HDR10Plus.DDP5.1-SMURF",
             vec!["HDR10+"],
         ),
-        ("Belle (2021) 2160p 10bit 4KLight DOLBY VISION BluRay DDP 7.1 x265-QTZ", vec!["DV"]),
+        (
+            "Belle (2021) 2160p 10bit 4KLight DOLBY VISION BluRay DDP 7.1 x265-QTZ",
+            vec!["DV"],
+        ),
         (
             "Андор / Andor [01x01-03 из 12] (2022) WEB-DL-HEVC 2160p | 4K | Dolby Vision TV | NewComers, HDRezka Studio",
             vec!["DV"],
         ),
-        ("АBullet.Train.2022.2160p.WEB-DL.DDP5.1.DV.MKV.x265-NOGRP", vec!["DV"]),
-        ("Bullet.Train.2022.2160p.WEB-DL.DoVi.DD5.1.HEVC-EVO[TGx]", vec!["DV"]),
+        (
+            "АBullet.Train.2022.2160p.WEB-DL.DDP5.1.DV.MKV.x265-NOGRP",
+            vec!["DV"],
+        ),
+        (
+            "Bullet.Train.2022.2160p.WEB-DL.DoVi.DD5.1.HEVC-EVO[TGx]",
+            vec!["DV"],
+        ),
         (
             "Спайдерхед / Spiderhead (2022) WEB-DL-HEVC 2160p | 4K | HDR | Dolby Vision Profile 8 | P | NewComers, Jaskier",
             vec!["DV", "HDR"],

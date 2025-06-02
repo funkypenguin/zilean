@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use lazy_static::lazy_static;
 use regress::Regex;
 
-use super::{extensions::regex::RegexStringExt, types::Codec, types::Network, ParsedTitle, types::Quality};
+use super::{
+    ParsedTitle, extensions::regex::RegexStringExt, types::Codec, types::Network, types::Quality,
+};
 
 #[derive(Debug)]
 pub struct Match {
@@ -92,7 +94,11 @@ impl Handler {
 
                 let before_title_match = BEFORE_TITLE_MATCH_REGEX.find_str(context.title);
                 let is_before_title = if let Some(before_title_match) = before_title_match {
-                    before_title_match.group(1).unwrap().as_str().contains(raw_match)
+                    before_title_match
+                        .group(1)
+                        .unwrap()
+                        .as_str()
+                        .contains(raw_match)
                 } else {
                     false
                 };
@@ -102,17 +108,15 @@ impl Handler {
                     .iter()
                     .filter(|(k, _)| k.as_str() != name)
                     .collect::<HashMap<_, _>>();
-                let is_skip_if_first =
-                    options.skip_if_first && !other_matches.is_empty() && other_matches.iter().all(|(_, v)| m.start() < v.match_index);
+                let is_skip_if_first = options.skip_if_first
+                    && !other_matches.is_empty()
+                    && other_matches.iter().all(|(_, v)| m.start() < v.match_index);
 
                 if !is_skip_if_first {
-                    context.matched.insert(
-                        name.to_string(),
-                        Match {
-                            raw_match: raw_match.to_string(),
-                            match_index: m.start(),
-                        },
-                    );
+                    context.matched.insert(name.to_string(), Match {
+                        raw_match: raw_match.to_string(),
+                        match_index: m.start(),
+                    });
 
                     *field = transformed;
 
@@ -158,7 +162,11 @@ impl Handler {
 
                 let before_title_match = BEFORE_TITLE_MATCH_REGEX.find_str(context.title);
                 let is_before_title = if let Some(before_title_match) = before_title_match {
-                    before_title_match.group(1).unwrap().as_str().contains(raw_match)
+                    before_title_match
+                        .group(1)
+                        .unwrap()
+                        .as_str()
+                        .contains(raw_match)
                 } else {
                     false
                 };
@@ -173,13 +181,10 @@ impl Handler {
                     && other_matches.iter().all(|(_, v)| m.start() < v.match_index);
 
                 if !is_skip_if_first {
-                    context.matched.insert(
-                        name.to_string(),
-                        Match {
-                            raw_match: raw_match.to_string(),
-                            match_index: m.start(),
-                        },
-                    );
+                    context.matched.insert(name.to_string(), Match {
+                        raw_match: raw_match.to_string(),
+                        match_index: m.start(),
+                    });
                     *field = transformed;
 
                     return Some(HandlerResult {

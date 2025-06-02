@@ -8,7 +8,7 @@ use crate::dmm::types::dmm_last_import::DmmLastImport;
 use crate::dmm::types::parsed_pages::ParsedPages;
 
 #[async_trait]
-pub trait DmmService: Send + Sync {
+pub trait DmmDbService: Send + Sync {
     async fn get_dmm_last_import(&self) -> Result<Option<DmmLastImport>>;
     async fn set_dmm_import(&self, import: &DmmLastImport) -> Result<()>;
     async fn add_pages_to_ingested(&self, pages: &[ParsedPages]) -> Result<()>;
@@ -16,11 +16,11 @@ pub trait DmmService: Send + Sync {
     async fn get_ingested_pages(&self) -> Result<Vec<ParsedPages>>;
 }
 
-pub struct PgDmmService {
+pub struct PgDmmDbService {
     pool: PgPool,
 }
 
-impl PgDmmService {
+impl PgDmmDbService {
     pub async fn connect(database_url: &str) -> Result<Self> {
         let pool = PgPoolOptions::new()
             .max_connections(5)
@@ -32,7 +32,7 @@ impl PgDmmService {
 }
 
 #[async_trait]
-impl DmmService for PgDmmService {
+impl DmmDbService for PgDmmDbService {
     async fn get_dmm_last_import(&self) -> Result<Option<DmmLastImport>> {
         let row: Option<(serde_json::Value,)> = sqlx::query_as(
             "SELECT \"Value\" FROM \"ImportMetadata\" WHERE \"Key\" = 'DmmLastImport'"

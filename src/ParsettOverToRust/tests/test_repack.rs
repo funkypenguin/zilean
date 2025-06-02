@@ -4,8 +4,14 @@ use parsett_rust::parse_title;
 fn test_repack_detection() {
     let test_cases = vec![
         ("Silicon Valley S04E03 REPACK HDTV x264-SVA", true),
-        ("Expedition Unknown S03E14 Corsicas Nazi Treasure RERIP 720p HDTV x264-W4F", true),
-        ("Have I Got News For You S53E02 EXTENDED 720p HDTV x264-QPEL", false),
+        (
+            "Expedition Unknown S03E14 Corsicas Nazi Treasure RERIP 720p HDTV x264-W4F",
+            true,
+        ),
+        (
+            "Have I Got News For You S53E02 EXTENDED 720p HDTV x264-QPEL",
+            false,
+        ),
     ];
 
     for (release_name, expected_repack) in test_cases {

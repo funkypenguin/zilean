@@ -4,7 +4,10 @@ use parsett_rust::parse_title;
 fn test_convert_detection() {
     let test_cases = vec![
         ("Better.Call.Saul.S03E04.CONVERT.720p.WEB.h264-TBS", true),
-        ("Have I Got News For You S53E02 EXTENDED 720p HDTV x264-QPEL", false),
+        (
+            "Have I Got News For You S53E02 EXTENDED 720p HDTV x264-QPEL",
+            false,
+        ),
     ];
 
     for (input, expected_convert) in test_cases {

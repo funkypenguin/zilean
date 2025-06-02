@@ -32,6 +32,9 @@ lz-str = "0.2.1"
 async-trait = "0.1.88"
 async-stream = "0.3.6"
 futures-core = "0.3.31"
+futures = "0.3.31"
+strsim = "0.11.1"
+arc-swap = "1.7.1"
 
 [build-dependencies]
 tonic-build = "0.13.1"

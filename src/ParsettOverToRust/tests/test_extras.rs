@@ -7,7 +7,10 @@ fn test_extras_detection() {
             "Madame Web 2024 1080p WEBRip 1400MB DD 5.1 x264 Sample-GalaxyRG[TGx]",
             Some(vec!["Sample"]),
         ),
-        ("Madame Web Sample 2024 1080p WEBRip 1400MB DD 5.1 x264-GalaxyRG[TGx]", None),
+        (
+            "Madame Web Sample 2024 1080p WEBRip 1400MB DD 5.1 x264-GalaxyRG[TGx]",
+            None,
+        ),
         (
             "Madame Web Sample 1080p WEBRip 1400MB DD 5.1 x264-GalaxyRG[TGx]",
             Some(vec!["Sample"]),

@@ -26,9 +26,10 @@ public class RustGrpcService(ILogger<GrpcClient> logger, ZileanConfiguration con
 
         var environmentalVariables = new Dictionary<string, string?>
         {
-            ["RUST_LOG"] = "info",
             ["ZILEAN_DATABASE_URL"] = dbConnectionString,
             ["ZILEAN_PARSING_THREADS"] = configuration.Parsing.ParsingThreads.ToString(),
+            ["ZILEAN_IMDB_MINIMUM_SCORE"] = configuration.Imdb.MinimumScoreMatch.ToString(CultureInfo.InvariantCulture),
+            ["RUST_LOG"] = configuration.Parsing.LogLevel,
         };
 
         logger.LogDebug("Using database connection string: {DbConnectionString}", dbConnectionString);

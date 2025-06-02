@@ -7,4 +7,5 @@ public class ParsingConfiguration
     public int ParsingThreads { get; set; } = 4;
     public int MatchingBatchSize { get; set; } = 100;
     public int StorageBatchSize { get; set; } = 5000;
+    public string LogLevel { get; set; } = "info";
 }

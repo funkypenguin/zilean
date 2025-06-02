@@ -3,7 +3,10 @@ use parsett_rust::parse_title;
 #[test]
 fn test_container_detection() {
     let test_cases = vec![
-        ("Kevin Hart What Now (2016) 1080p BluRay x265 6ch -Dtech mkv", "mkv"),
+        (
+            "Kevin Hart What Now (2016) 1080p BluRay x265 6ch -Dtech mkv",
+            "mkv",
+        ),
         ("The Gorburger Show S01E05 AAC MP4-Mobile", "mp4"),
         ("[req]Night of the Lepus (1972) DVDRip XviD avi", "avi"),
     ];

@@ -1,6 +1,7 @@
 use std::pin::Pin;
 use std::sync::Arc;
-use tokio::sync::{mpsc, Notify, RwLock};
+use arc_swap::ArcSwap;
+use tokio::sync::{mpsc, Notify};
 use tokio_stream::Stream;
 use tokio_stream::wrappers::{UnboundedReceiverStream};
 use parsett_rust::{parse_batch};
@@ -15,7 +16,7 @@ use crate::proto::*;
 
 # [allow(unused)]
 pub struct SharedState {
-    pub searcher: Arc<RwLock<ImdbSearcher>>,
+    pub searcher: Arc<ArcSwap<ImdbSearcher>>,
     pub ingestor: Arc<ImdbIngestor>,
     pub shutdown_notify: Arc<Notify>,
     pub app_config: Arc<AppConfig>,
@@ -64,7 +65,7 @@ impl<'a> ZileanRustServer for ZileanService {
         request: Request<SearchImdbRequest>,
     ) -> Result<Response<SearchImdbResponse>, Status> {
         let req = request.into_inner();
-        let searcher = self.state.searcher.read().await;
+        let searcher = self.state.searcher.load();
         let matches = searcher.search(&req.title, &req.category, req.year);
         Ok(Response::new(SearchImdbResponse { matches }))
     }

@@ -3,12 +3,18 @@ use parsett_rust::parse_title;
 #[test]
 fn test_unrated_detection() {
     let test_cases = vec![
-        ("Identity.Thief.2013.Vostfr.UNRATED.BluRay.720p.DTS.x264-Nenuko", true),
+        (
+            "Identity.Thief.2013.Vostfr.UNRATED.BluRay.720p.DTS.x264-Nenuko",
+            true,
+        ),
         (
             "Charlie.les.filles.lui.disent.merci.2007.UNCENSORED.TRUEFRENCH.DVDRiP.AC3.Libe",
             true,
         ),
-        ("Have I Got News For You S53E02 EXTENDED 720p HDTV x264-QPEL", false),
+        (
+            "Have I Got News For You S53E02 EXTENDED 720p HDTV x264-QPEL",
+            false,
+        ),
     ];
 
     for (release_name, expected_unrated) in test_cases {

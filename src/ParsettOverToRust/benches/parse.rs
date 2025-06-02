@@ -1,6 +1,6 @@
+use criterion::{Criterion, criterion_group, criterion_main};
+use parsett_rust::parse_title;
 use std::hint::black_box;
-use criterion::{criterion_group, criterion_main, Criterion};
-use parsett_rust::{parse_title};
 
 fn bench_single_title(c: &mut Criterion) {
     let sample = "Oppenheimer.2023.IMAX.2160p.BluRay.x265.10bit.HDR.DTS-HD.MA.5.1-SAMPLE";
