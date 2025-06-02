@@ -1946,6 +1946,7 @@ dependencies = [
  "regex",
  "regress",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]

@@ -6,7 +6,8 @@ lazy_static! {
 }
 
 pub fn normalize_title(text: &str) -> String {
-    let cleaned = text.to_lowercase()
+    let cleaned = text
+        .to_lowercase()
         .replace('&', " and ")
         .replace(':', "")
         .replace('?', "")

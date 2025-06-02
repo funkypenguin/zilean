@@ -1,5 +1,6 @@
 use super::ParsedTitle;
-use super::ParserError;
+use super::errors::ParserError;
+use super::errors::ParserError::*;
 use super::extensions::regex::RegexStringExt as _;
 use super::handler_wrapper::Handler;
 use super::handler_wrapper::HandlerContext;
@@ -10,6 +11,7 @@ use lazy_static::lazy_static;
 use regress::Regex;
 use std::collections::HashMap;
 use std::sync::OnceLock;
+use tracing::warn;
 
 const CURLY_BRACKETS: (&str, &str) = ("{", "}");
 const SQUARE_BRACKETS: (&str, &str) = ("[", "]");
@@ -164,11 +166,19 @@ impl Parser {
             };
 
             if match_result.remove {
-                title = format!(
-                    "{}{}",
-                    &title[..match_result.match_index],
-                    &title[match_result.match_index + match_result.raw_match.len()..]
-                );
+                let left = title.get(..match_result.match_index);
+                let right = title.get(match_result.match_index + match_result.raw_match.len()..);
+
+                match (left, right) {
+                    (Some(l), Some(r)) => title = format!("{}{}", l, r),
+                    _ => {
+                        warn!(
+                            "Skipping unsafe match slice at index {} on '{}'",
+                            match_result.match_index, title
+                        );
+                        continue;
+                    }
+                }
             }
             if !match_result.skip_from_title
                 && 1 < match_result.match_index
@@ -185,7 +195,16 @@ impl Parser {
         }
 
         end_of_title = end_of_title.min(title.len());
-        let title = title[..end_of_title].to_string();
+        let title = match title.get(..end_of_title) {
+            Some(t) => t.to_string(),
+            None => {
+                warn!(
+                    "Unsafe end_of_title slice at {} in '{}'",
+                    end_of_title, title
+                );
+                return Err(InvalidUtf8Index);
+            }
+        };
         result.title = self.clean_title(&title);
 
         Ok(result)

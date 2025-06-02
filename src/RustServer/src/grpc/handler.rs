@@ -1,11 +1,3 @@
-use std::pin::Pin;
-use std::sync::Arc;
-use arc_swap::ArcSwap;
-use tokio::sync::{mpsc, Notify};
-use tokio_stream::Stream;
-use tokio_stream::wrappers::{UnboundedReceiverStream};
-use parsett_rust::{parse_batch};
-use tonic::{Request, Response, Status};
 use crate::configuration::config::AppConfig;
 use crate::dmm::page_parser::DmmFileEntryProcessor;
 use crate::dmm::repo_manager::DmmRepoManager;
@@ -13,8 +5,17 @@ use crate::grpc::mapping::{map_parsed_title, map_to_empty_on_error};
 use crate::imdb::{ImdbIngestor, ImdbSearcher};
 use crate::proto::zilean_rust_server_server::ZileanRustServer;
 use crate::proto::*;
+use arc_swap::ArcSwap;
+use parsett_rust::parse_batch;
+use std::pin::Pin;
+use std::sync::Arc;
+use tokio::sync::{Notify, mpsc};
+use tokio_stream::Stream;
+use tokio_stream::wrappers::UnboundedReceiverStream;
+use tonic::{Request, Response, Status};
+use tracing::warn;
 
-# [allow(unused)]
+#[allow(unused)]
 pub struct SharedState {
     pub searcher: Arc<ArcSwap<ImdbSearcher>>,
     pub ingestor: Arc<ImdbIngestor>,
@@ -36,14 +37,13 @@ impl<'a> ZileanRustServer for ZileanService {
     ) -> Result<Response<IngestImdbResponse>, Status> {
         tracing::info!("Downloading and Indexing IMDb file...");
         let req = request.into_inner();
-        let indexed = self.state
-            .ingestor
-            .ingest_imdb_data(&req).await.unwrap();
+        let indexed = self.state.ingestor.ingest_imdb_data(&req).await.unwrap();
 
         tracing::info!("Ingestion complete, indexed {} new documents", indexed);
         Ok(Response::new(IngestImdbResponse {}))
     }
-    type IngestDmmPagesStream = Pin<Box<dyn Stream<Item = Result<ParsedDmmPageEntry, Status>> + Send + 'static>>;
+    type IngestDmmPagesStream =
+        Pin<Box<dyn Stream<Item = Result<ParsedDmmPageEntry, Status>> + Send + 'static>>;
 
     async fn ingest_dmm_pages(
         &self,
@@ -70,8 +70,8 @@ impl<'a> ZileanRustServer for ZileanService {
         Ok(Response::new(SearchImdbResponse { matches }))
     }
 
-    type ParseTorrentTitlesStream = Pin<Box<dyn Stream<Item = Result<TorrentTitleResponse, Status>> + Send>>;
-
+    type ParseTorrentTitlesStream =
+        Pin<Box<dyn Stream<Item = Result<TorrentTitleResponse, Status>> + Send>>;
 
     async fn parse_torrent_titles(
         &self,
@@ -92,7 +92,13 @@ impl<'a> ZileanRustServer for ZileanService {
         for (req, parse_result) in requests.into_iter().zip(results.into_iter()) {
             let response = match parse_result {
                 Ok(parsed) => map_parsed_title(&req.info_hash, &req.title, parsed),
-                Err(_) => map_to_empty_on_error(&req.info_hash, &req.title),
+                Err(e) => {
+                    warn!(
+                        "Failed to parse title '{}' (info_hash={}): {:?}",
+                        req.title, req.info_hash, e
+                    );
+                    map_to_empty_on_error(&req.info_hash, &req.title)
+                }
             };
             if tx.send(Ok(response)).is_err() {
                 break;

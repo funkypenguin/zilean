@@ -1,5 +1,5 @@
-use crate::{proto, utils};
 use crate::proto::{TorrentInfo, TorrentTitleResponse};
+use crate::{proto, utils};
 use parsett_rust::ParsedTitle;
 
 pub fn map_parsed_title(

@@ -1,11 +1,11 @@
 // src/main.rs
-mod grpc;
-mod imdb;
 mod configuration;
 mod dmm;
+mod grpc;
+mod imdb;
 mod utils;
 
-use crate::configuration::config::{load_config};
+use crate::configuration::config::load_config;
 
 pub mod proto {
     tonic::include_proto!("zilean_rust");
@@ -18,8 +18,7 @@ use tracing_subscriber::EnvFilter;
 static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 fn init_tracing() {
-    let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
     tracing_subscriber::fmt().with_env_filter(filter).init();
 }
 

@@ -1,7 +1,7 @@
-use std::path::Path;
-use git2::{Repository, FetchOptions, RemoteCallbacks};
 use anyhow::{Context, Result};
+use git2::{FetchOptions, RemoteCallbacks, Repository};
 use std::fs;
+use std::path::Path;
 use std::sync::Arc;
 
 pub struct DmmRepoManager {
@@ -61,7 +61,9 @@ impl DmmRepoManager {
 
     fn pull_existing_repo(&self, path: &Path) -> Result<()> {
         let repo = Repository::open(path).context("Failed to open existing repo")?;
-        let mut remote = repo.find_remote("origin").context("No 'origin' remote found")?;
+        let mut remote = repo
+            .find_remote("origin")
+            .context("No 'origin' remote found")?;
 
         let config = Arc::new(repo.config().context("Failed to get git config")?);
         let username = std::env::var("ZILEAN_GITHUB_USERNAME").ok();
@@ -89,7 +91,8 @@ impl DmmRepoManager {
         let fetch_head = repo.find_reference("FETCH_HEAD")?;
         let fetch_commit = repo.reference_to_annotated_commit(&fetch_head)?;
 
-        let mut refspec = repo.find_reference("refs/heads/main")
+        let mut refspec = repo
+            .find_reference("refs/heads/main")
             .or_else(|_| repo.head())?;
 
         let analysis = repo.merge_analysis(&[&fetch_commit])?;

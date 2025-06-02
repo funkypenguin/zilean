@@ -6,6 +6,7 @@ mod test_container;
 mod test_convert;
 mod test_date;
 mod test_dubbed;
+mod test_edge;
 mod test_edition;
 mod test_episode_code;
 mod test_episodes;

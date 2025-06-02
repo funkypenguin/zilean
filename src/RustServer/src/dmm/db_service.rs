@@ -1,11 +1,11 @@
 #![allow(dead_code)]
 
-use async_trait::async_trait;
-use sqlx::{PgPool, Row};
-use anyhow::Result;
-use sqlx::postgres::PgPoolOptions;
 use crate::dmm::types::dmm_last_import::DmmLastImport;
 use crate::dmm::types::parsed_pages::ParsedPages;
+use anyhow::Result;
+use async_trait::async_trait;
+use sqlx::postgres::PgPoolOptions;
+use sqlx::{PgPool, Row};
 
 #[async_trait]
 pub trait DmmDbService: Send + Sync {
@@ -35,10 +35,10 @@ impl PgDmmDbService {
 impl DmmDbService for PgDmmDbService {
     async fn get_dmm_last_import(&self) -> Result<Option<DmmLastImport>> {
         let row: Option<(serde_json::Value,)> = sqlx::query_as(
-            "SELECT \"Value\" FROM \"ImportMetadata\" WHERE \"Key\" = 'DmmLastImport'"
+            "SELECT \"Value\" FROM \"ImportMetadata\" WHERE \"Key\" = 'DmmLastImport'",
         )
-            .fetch_optional(&self.pool)
-            .await?;
+        .fetch_optional(&self.pool)
+        .await?;
 
         Ok(row.and_then(|(val,)| serde_json::from_value(val).ok()))
     }
@@ -50,12 +50,12 @@ impl DmmDbService for PgDmmDbService {
             INSERT INTO "ImportMetadata" ("Key", "Value")
             VALUES ('DmmLastImport', $1)
             ON CONFLICT (key) DO UPDATE SET "Value" = EXCLUDED."Value"
-            "#
+            "#,
         )
-            .bind(val)
-            .execute(&self.pool)
-            .await?;
-        
+        .bind(val)
+        .execute(&self.pool)
+        .await?;
+
         Ok(())
     }
 
@@ -67,9 +67,7 @@ impl DmmDbService for PgDmmDbService {
     }
 
     async fn add_page_to_ingested(&self, page: &ParsedPages) -> Result<()> {
-        sqlx::query(
-            "INSERT INTO \"ParsedPages\" (\"Page\", \"EntryCount\") VALUES ($1, $2)"
-        )
+        sqlx::query("INSERT INTO \"ParsedPages\" (\"Page\", \"EntryCount\") VALUES ($1, $2)")
             .bind(&page.page)
             .bind(page.entry_count as i32)
             .execute(&self.pool)

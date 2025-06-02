@@ -1,15 +1,15 @@
+use crate::errors::ParserError;
+use rayon::prelude::*;
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use tracing::error;
+
+pub mod errors;
 pub mod extensions;
 pub mod handler_wrapper;
 pub mod parser;
 pub mod parser_handlers;
 pub mod transforms;
 pub mod types;
-
-#[derive(Debug, thiserror::Error)]
-pub enum ParserError {
-    #[error("Failed to parse title")]
-    ParseError(String),
-}
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ParsedTitle {
@@ -60,10 +60,15 @@ pub struct ParsedTitle {
 
 pub fn parse_title(raw_title: &str) -> Result<ParsedTitle, ParserError> {
     let parser = parser::Parser::default();
-    parser.parse(raw_title)
-}
 
-use rayon::prelude::*;
+    match catch_unwind(AssertUnwindSafe(|| parser.parse(raw_title))) {
+        Ok(inner_result) => inner_result,
+        Err(_) => {
+            error!("Panic occurred while parsing title: '{}'", raw_title);
+            Err(ParserError::Panic)
+        }
+    }
+}
 
 pub fn parse_batch(titles: Vec<&str>) -> Vec<Result<ParsedTitle, ParserError>> {
     titles

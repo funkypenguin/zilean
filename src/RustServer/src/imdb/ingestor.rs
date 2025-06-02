@@ -1,8 +1,14 @@
 use crate::imdb::ImdbSearcher;
+use crate::proto::IngestImdbRequest;
+use crate::utils;
+use arc_swap::ArcSwap;
 use flate2::read::GzDecoder;
 use reqwest::Client;
+use serde::Serialize;
+use sqlx::postgres::{PgConnectOptions, PgConnection};
+use sqlx::types::Json;
 use sqlx::{ConnectOptions, Connection};
-use sqlx::postgres::{PgConnection, PgConnectOptions};
+use std::collections::HashSet;
 use std::{
     fs::File,
     io::{BufRead, BufReader},
@@ -10,15 +16,9 @@ use std::{
     sync::Arc,
     time::Duration,
 };
-use std::collections::HashSet;
-use arc_swap::ArcSwap;
 use tantivy::TantivyDocument;
 use tokio::{fs, io::AsyncWriteExt};
-use serde::Serialize;
-use sqlx::types::Json;
 use tracing::log::LevelFilter;
-use crate::proto::IngestImdbRequest;
-use crate::utils;
 
 pub struct ImdbIngestor {
     searcher: Arc<ArcSwap<ImdbSearcher>>,
@@ -78,8 +78,7 @@ impl ImdbIngestor {
                     fs::remove_file(&data_file).await.ok();
                 }
             }
-        }
-        else {
+        } else {
             fs::remove_file(&data_file).await.ok();
         }
 
@@ -114,7 +113,8 @@ impl ImdbIngestor {
         tsv_path: &Path,
         db_url: &String,
         request: &IngestImdbRequest,
-        valid_cached_file: &bool) -> anyhow::Result<usize> {
+        valid_cached_file: &bool,
+    ) -> anyhow::Result<usize> {
         let current = self.searcher.load();
         let mut new_searcher = (*current).clone();
         Arc::make_mut(&mut new_searcher).drop_and_initialise_index()?;
@@ -125,7 +125,8 @@ impl ImdbIngestor {
             return Ok(0);
         }
 
-        let connect_options = db_url.parse::<PgConnectOptions>()?
+        let connect_options = db_url
+            .parse::<PgConnectOptions>()?
             .log_statements(LevelFilter::Debug)
             .log_slow_statements(LevelFilter::Info, Duration::from_secs(120));
 
@@ -170,7 +171,10 @@ impl ImdbIngestor {
             doc.add_text(new_searcher.category, category);
             doc.add_text(new_searcher.title, &title);
             doc.add_i64(new_searcher.year, year as i64);
-            doc.add_text(new_searcher.normalized_title, utils::strings::normalize_title(&title));
+            doc.add_text(
+                new_searcher.normalized_title,
+                utils::strings::normalize_title(&title),
+            );
             index_writer.add_document(doc)?;
 
             // COPY line
@@ -198,7 +202,10 @@ impl ImdbIngestor {
         Ok(count)
     }
 
-    async fn set_imdb_last_import(db_conn: &mut PgConnection, entry_count: i64) -> anyhow::Result<()> {
+    async fn set_imdb_last_import(
+        db_conn: &mut PgConnection,
+        entry_count: i64,
+    ) -> anyhow::Result<()> {
         let last_import = ImdbLastImport {
             OccuredAt: chrono::Utc::now(),
             EntryCount: entry_count,
@@ -213,12 +220,16 @@ impl ImdbIngestor {
                 ON CONFLICT ("Key") DO UPDATE SET "Value" = EXCLUDED."Value"
                 "#,
         )
-            .bind("ImdbLastImport")
-            .bind(Json(value))
-            .execute(db_conn)
-            .await?;
+        .bind("ImdbLastImport")
+        .bind(Json(value))
+        .execute(db_conn)
+        .await?;
 
-        tracing::info!("Indexing completed at {}, inserted {} IMDb records",last_import.OccuredAt, entry_count);
+        tracing::info!(
+            "Indexing completed at {}, inserted {} IMDb records",
+            last_import.OccuredAt,
+            entry_count
+        );
         Ok(())
     }
 
@@ -231,13 +242,16 @@ impl ImdbIngestor {
     }
 
     async fn drop_temp_table(db_conn: &mut PgConnection) -> anyhow::Result<()> {
-        sqlx::query(r#"DROP TABLE IF EXISTS imdbfiles_staging"#).execute(db_conn).await?;
+        sqlx::query(r#"DROP TABLE IF EXISTS imdbfiles_staging"#)
+            .execute(db_conn)
+            .await?;
         Ok(())
     }
 
     async fn merge_temp_table_to_main(db_conn: &mut PgConnection) -> anyhow::Result<()> {
         tracing::info!("Postgres COPY completed, Merging onto main table...");
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             INSERT INTO "ImdbFiles" ("ImdbId", "Adult", "Category", "Title", "Year")
             SELECT "ImdbId", "Adult", "Category", "Title", "Year" FROM imdbfiles_staging
             ON CONFLICT ("ImdbId") DO UPDATE
@@ -245,12 +259,16 @@ impl ImdbIngestor {
                 "Category"=EXCLUDED."Category",
                 "Title"=EXCLUDED."Title",
                 "Year"=EXCLUDED."Year";
-        "#).execute(db_conn).await?;
+        "#,
+        )
+        .execute(db_conn)
+        .await?;
         Ok(())
     }
 
     async fn create_staging_table(db_conn: &mut PgConnection) -> anyhow::Result<()> {
-        sqlx::query(r#"
+        sqlx::query(
+            r#"
             CREATE TEMP TABLE imdbfiles_staging (
                 "ImdbId" text PRIMARY KEY,
                 "Adult" boolean,
@@ -258,7 +276,10 @@ impl ImdbIngestor {
                 "Title" text,
                 "Year" integer
             );
-        "#).execute(db_conn).await?;
+        "#,
+        )
+        .execute(db_conn)
+        .await?;
         Ok(())
     }
 }
